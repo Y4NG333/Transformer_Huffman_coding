@@ -34,6 +34,7 @@ def get_attn_pad_mask(seq_q, seq_k):
 
 def get_attn_subsequence_mask(seq):
     attn_shape = [seq.size(0), seq.size(1), seq.size(1)]
+    # Upper triangular matrix
     subsequence_mask = np.triu(np.ones(attn_shape), k=1)
     subsequence_mask = torch.from_numpy(subsequence_mask).byte()
     return subsequence_mask
@@ -74,8 +75,8 @@ class MultiHeadAttention(nn.Module):
                                    self.n_heads, self.d_k).transpose(1, 2)
         V = self.W_V(input_V).view(batch_size, -1,
                                    self.n_heads, self.d_v).transpose(1, 2)
-        attn_mask = attn_mask.unsqueeze(1).repeat(1, self.n_heads, 1, 1)
 
+        attn_mask = attn_mask.unsqueeze(1).repeat(1, self.n_heads, 1, 1)
         context, attn = ScaledDotProductAttention()(Q, K, V, attn_mask)
         context = context.transpose(1, 2).reshape(
             batch_size, -1, self.n_heads * self.d_v)
@@ -159,7 +160,7 @@ class Decoder(nn.Module):
         super(Decoder, self).__init__()
         self.n_layers = 6
         self.d_model = 512
-        self.tgt_vocab_size = 3
+        self.tgt_vocab_size = 4
         self.tgt_emb = nn.Embedding(self.tgt_vocab_size, self.d_model)
         self.pos_emb = PositionalEncoding(self.d_model)
         self.layers = nn.ModuleList([DecoderLayer()
@@ -168,8 +169,10 @@ class Decoder(nn.Module):
     def forward(self, dec_inputs, enc_inputs, enc_outputs):
         dec_outputs = self.tgt_emb(
             dec_inputs)
+
         dec_outputs = self.pos_emb(dec_outputs.transpose(0, 1)).transpose(
             0, 1)
+
         dec_self_attn_pad_mask = get_attn_pad_mask(
             dec_inputs, dec_inputs)
 
@@ -195,7 +198,7 @@ class Transformer(nn.Module):
     def __init__(self):
         super(Transformer, self).__init__()
         self.d_model = 512
-        self.tgt_vocab_size = 3
+        self.tgt_vocab_size = 4
         self.encoder = Encoder()
         self.decoder = Decoder()
         self.projection = nn.Linear(

@@ -18,22 +18,13 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 alpha = [(chr(97+i), 1) for i in range(26)]
 codebook = huffman.codebook(alpha)
 
-# we need to use padding 0 ，so the vocab is 27 and 3
-# 1 and 2 used for as encoding (old a-> 10101 now a -> 12121)
-for i in codebook:
-    codebook[i] = codebook[i].replace('0', '2')
-    while(len(codebook[i]) != 5):
-        codebook[i] += '0'
-# codebook =  {'a': '12121', 'b': '22220', 'c': '12122', 'd': '11121', 'e': '11112',
-#              'f': '21112', 'g': '21121', 'h': '21210', 'i': '12212', 'j': '12111',
-#              'k': '11211', 'l': '21111', 'm': '12222', 'n': '22120', 'o': '21122',
-#              'p': '11222', 'q': '12211', 'r': '11111', 's': '11221', 't': '11122',
-#              'u': '21220', 'v': '12221', 'w': '11212', 'x': '22110', 'y': '12112', 'z': '22210'}
-
+# codebook =   {'a': '10101', 'b': '0000', 'c': '10100', 'd': '11101', 'e': '11110', 'f': '01110', 'g': '01101', 'h': '0101',
+# 'i': '10010', 'j': '10111', 'k': '11011', 'l': '01111', 'm': '10000', 'n': '0010', 'o': '01100', 'p': '11000', 'q': '10011',
+# 'r': '11111', 's': '11001', 't': '11100', 'u': '0100', 'v': '10001', 'w': '11010', 'x': '0011', 'y': '10110', 'z': '0001'}
 
 seq_len = 10
-res, original_in, original_out = data_generator(
-    codebook, seq_len=seq_len, data_num=300)
+res, original_in, original_out01, original_out, = data_generator(
+    codebook, seq_len=seq_len, data_num=200)
 
 
 enc_inputs = torch.LongTensor(original_in)
@@ -44,9 +35,8 @@ dec_outputs = torch.LongTensor(original_out)
 loader = Data.DataLoader(
     MyDataSet(enc_inputs, dec_inputs, dec_outputs), 2, True)
 
-
 src_vocab_size = 27
-tgt_vocab_size = 3  # 0 is used for padding. 1 and 2 is used for encoding
+tgt_vocab_size = 4  # 3 is used for padding. 0 and 1 is used for encoding
 src_len = 10  # enc_input max sequence length
 tgt_len = 50  # dec_input(=dec_output) max sequence length
 model = Transformer()
@@ -62,24 +52,29 @@ for epoch in range(2):
         print('Epoch:', '%04d' % (epoch + 1), 'loss =', f'{loss}')
         if epoch == 1 and flag == 0:
             real_out = [torch.argmax(outputs[x]).item() for x in range(0, 50)]
-            print("output vec", real_out)
-            print("label vec", dec_outputs[0])
+
+            real_out = [0 if x == 2 else x for x in real_out]
+            real_out = [2 if x == 3 else x for x in real_out]
+
+            label_out = [1 if x == 1 else x for x in dec_outputs[0]]
+            label_out = [0 if x == 2 else x for x in label_out]
+            label_out = [2 if x == 3 else x for x in label_out]
+
             str_out = ""
             print("output", str_out.join(str(i) for i in real_out))
-
-            cur_ = [i.item() for i in dec_outputs[0]]
             for item in res:
-                if cur_ == item[3]:
+                if label_out == item[3]:
                     print(" label", item[2])
                     print("str", item[0])
                     y_label = item[0]
             flag = 1
 
             plt.figure(figsize=(10, 10.5))
-            plt.xticks([i for i in range(50)], [i for i in real_out])
+            plt.xticks([i for i in range(50)], [real_out[i]
+                       for i in range(len(real_out))])
             plt.yticks([i for i in range(10)], [y_label[i]
                        for i in range(len(y_label))])
-            plt.imshow(rotate(dec_enc_attns[5][1][7].detach().numpy()))
+            plt.imshow(rotate(dec_enc_attns[5][0][7].detach().numpy()))
             plt.show()
 
         optimizer.zero_grad()
