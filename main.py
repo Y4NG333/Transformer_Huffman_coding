@@ -1,16 +1,14 @@
-import os
-import random
 import huffman
-import torch
 import numpy as np
+import os
+import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.utils.data as Data
-from utils import rotate
-from utils import MyDataSet
-from model import Transformer
-from utils import data_generator
+
 from matplotlib import pyplot as plt
+from model import Transformer
+from utils import data_generator, MyDataSet, rotate
 
 # Used to configure the environment (if there is no this code, the picture cannot be generated, the specific reason is unknown)
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"

@@ -1,6 +1,5 @@
 import numpy as np
 import torch.utils.data as Data
-from numpy import random
 
 
 def data_generator(codebook, seq_len, data_num):
@@ -8,7 +7,7 @@ def data_generator(codebook, seq_len, data_num):
                 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
     res = []
 
-    data = random.randint(1, 27, (data_num, seq_len))
+    data = np.random.randint(1, 27, (data_num, seq_len))
     data_t = []
     data_t_replace = []
     for i in range(data_num):
