@@ -11,19 +11,18 @@ class PositionalEncoding(nn.Module):
 
         pe = torch.zeros(max_len, d_model)
         position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
-        div_term = torch.exp(torch.arange(
-            0, d_model, 2).float() * (-math.log(10000.0) / d_model))
+        div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model))
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
         pe = pe.unsqueeze(0).transpose(0, 1)
-        self.register_buffer('pe', pe)
+        self.register_buffer("pe", pe)
 
     def forward(self, x):
         """
         Args:
             x: Tensor, shape [seq_len, batch_size, embedding_dim]
         """
-        x = x + self.pe[:x.size(0)]
+        x = x + self.pe[: x.size(0)]
         return self.dropout(x)
 
 
@@ -48,8 +47,7 @@ class ScaledDotProductAttention(nn.Module):
         self.d_k = 64
 
     def forward(self, Q, K, V, attn_mask):
-        scores = torch.matmul(Q, K.transpose(-1, -2)) / \
-            np.sqrt(self.d_k)
+        scores = torch.matmul(Q, K.transpose(-1, -2)) / np.sqrt(self.d_k)
         scores.masked_fill_(attn_mask, -1e9)
 
         attn = nn.Softmax(dim=-1)(scores)
@@ -57,8 +55,6 @@ class ScaledDotProductAttention(nn.Module):
         return context, attn
 
 
-        self.n_heads = 8
-        self.d_model = 512
 class MultiHeadAttention(nn.Module):
     def __init__(self, n_heads, d_model):
         super(MultiHeadAttention, self).__init__()
@@ -73,17 +69,13 @@ class MultiHeadAttention(nn.Module):
 
     def forward(self, input_Q, input_K, input_V, attn_mask):
         residual, batch_size = input_Q, input_Q.size(0)
-        Q = self.W_Q(input_Q).view(batch_size, -1,
-                                   self.n_heads, self.d_k).transpose(1, 2)
-        K = self.W_K(input_K).view(batch_size, -1,
-                                   self.n_heads, self.d_k).transpose(1, 2)
-        V = self.W_V(input_V).view(batch_size, -1,
-                                   self.n_heads, self.d_v).transpose(1, 2)
+        Q = self.W_Q(input_Q).view(batch_size, -1, self.n_heads, self.d_k).transpose(1, 2)
+        K = self.W_K(input_K).view(batch_size, -1, self.n_heads, self.d_k).transpose(1, 2)
+        V = self.W_V(input_V).view(batch_size, -1, self.n_heads, self.d_v).transpose(1, 2)
 
         attn_mask = attn_mask.unsqueeze(1).repeat(1, self.n_heads, 1, 1)
         context, attn = ScaledDotProductAttention()(Q, K, V, attn_mask)
-        context = context.transpose(1, 2).reshape(
-            batch_size, -1, self.n_heads * self.d_v)
+        context = context.transpose(1, 2).reshape(batch_size, -1, self.n_heads * self.d_v)
         output = self.fc(context)
         return nn.LayerNorm(self.d_model)(output + residual), attn
 
@@ -96,7 +88,7 @@ class PoswiseFeedForwardNet(nn.Module):
         self.fc = nn.Sequential(
             nn.Linear(self.d_model, self.d_ff, bias=False),
             nn.ReLU(),
-            nn.Linear(self.d_ff, self.d_model, bias=False)
+            nn.Linear(self.d_ff, self.d_model, bias=False),
         )
 
     def forward(self, inputs):
@@ -112,8 +104,7 @@ class EncoderLayer(nn.Module):
         self.pos_ffn = PoswiseFeedForwardNet(d_model)
 
     def forward(self, enc_inputs, enc_self_attn_mask):
-        enc_outputs, attn = self.enc_self_attn(
-            enc_inputs, enc_inputs, enc_inputs, enc_self_attn_mask)
+        enc_outputs, attn = self.enc_self_attn(enc_inputs, enc_inputs, enc_inputs, enc_self_attn_mask)
         enc_outputs = self.pos_ffn(enc_outputs)
         return enc_outputs, attn
 
@@ -180,7 +171,8 @@ class Decoder(nn.Module):
         dec_self_attns, dec_enc_attns = [], []
         for layer in self.layers:
             dec_outputs, dec_self_attn, dec_enc_attn = layer(
-                dec_outputs, enc_outputs, dec_self_attn_mask, dec_enc_attn_mask)
+                dec_outputs, enc_outputs, dec_self_attn_mask, dec_enc_attn_mask
+            )
             dec_self_attns.append(dec_self_attn)
             dec_enc_attns.append(dec_enc_attn)
         return dec_outputs, dec_self_attns, dec_enc_attns
@@ -200,7 +192,11 @@ class Transformer(nn.Module):
 
     def forward(self, enc_inputs, dec_inputs):
         enc_outputs, enc_self_attns = self.encoder(enc_inputs)
-        dec_outputs, dec_self_attns, dec_enc_attns = self.decoder(
-            dec_inputs, enc_inputs, enc_outputs)
+        dec_outputs, dec_self_attns, dec_enc_attns = self.decoder(dec_inputs, enc_inputs, enc_outputs)
         dec_logits = self.projection(dec_outputs)
-        return dec_logits.view(-1, dec_logits.size(-1)), enc_self_attns, dec_self_attns, dec_enc_attns
+        return (
+            dec_logits.view(-1, dec_logits.size(-1)),
+            enc_self_attns,
+            dec_self_attns,
+            dec_enc_attns,
+        )

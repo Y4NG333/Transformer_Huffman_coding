@@ -21,11 +21,11 @@ def data_generator(datainfo, batch_num):
     code_symbolwise = np.vectorize(datainfo.codebook.__getitem__)(seq)
 
     # merge binary codes (join) and add padding (ljust)
-    code_merged = [list(''.join(s_arr).ljust(datainfo.max_len, datainfo.pad_symbol)) for s_arr in code_symbolwise]
+    code_merged = [list("".join(s_arr).ljust(datainfo.max_len, datainfo.pad_symbol)) for s_arr in code_symbolwise]
     code = np.array(code_merged)
 
     # generate sequence int
-    seq_chr_map = {c: i  for i, c in enumerate(datainfo.alphabet)}
+    seq_chr_map = {c: i for i, c in enumerate(datainfo.alphabet)}
     seq_int = np.vectorize(seq_chr_map.get)(seq)
 
     # generate onehot (currently not needed)
@@ -79,10 +79,8 @@ def draw_plot():
         flag = 1
 
         plt.figure(figsize=(10, 10.5))
-        plt.xticks([i for i in range(50)], [real_out[i]
-                   for i in range(len(real_out))])
-        plt.yticks([i for i in range(10)], [y_label[i]
-                   for i in range(len(y_label))])
+        plt.xticks([i for i in range(50)], [real_out[i] for i in range(len(real_out))])
+        plt.yticks([i for i in range(10)], [y_label[i] for i in range(len(y_label))])
         plt.imshow(rotate(dec_enc_attns[5][0][7].detach().numpy()))
         plt.show()
     pass
