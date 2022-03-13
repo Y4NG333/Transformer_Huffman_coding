@@ -43,13 +43,13 @@ optimizer = optim.SGD(model.parameters(), lr=1e-3, momentum=0.99)
 
 # Train
 for epoch in range(num_epoch):
-    seq, seq_onehot, code, code_onehot = data_generator(datainfo, batch_num)
-    seq_onehot = torch.LongTensor(seq_onehot)
-    code_onehot = torch.LongTensor(code_onehot)
+    seq, seq_int, code, code_int = data_generator(datainfo, batch_num)
+    seq_int = torch.LongTensor(seq_int)
+    code_int = torch.LongTensor(code_int)
 
     optimizer.zero_grad()
-    outputs, enc_self_attns, dec_self_attns, dec_enc_attns = model(seq_onehot, code_onehot)
-    loss = criterion(outputs, code_onehot.view(-1))
+    outputs, enc_self_attns, dec_self_attns, dec_enc_attns = model(seq_int, code_int)
+    loss = criterion(outputs, code_int.view(-1))
     loss.backward()
     optimizer.step()
 
