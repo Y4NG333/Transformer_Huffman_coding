@@ -5,7 +5,7 @@ import torch.nn as nn
 
 
 class PositionalEncoding(nn.Module):
-    def __init__(self, d_model=512, dropout=0.1, max_len=5000):
+    def __init__(self, d_model, dropout=0.1, max_len=5000):
         super(PositionalEncoding, self).__init__()
         self.dropout = nn.Dropout(p=dropout)
 
@@ -19,7 +19,11 @@ class PositionalEncoding(nn.Module):
         self.register_buffer('pe', pe)
 
     def forward(self, x):
-        x = x + self.pe[:x.size(0), :]
+        """
+        Args:
+            x: Tensor, shape [seq_len, batch_size, embedding_dim]
+        """
+        x = x + self.pe[:x.size(0)]
         return self.dropout(x)
 
 
@@ -53,13 +57,15 @@ class ScaledDotProductAttention(nn.Module):
         return context, attn
 
 
-class MultiHeadAttention(nn.Module):
-    def __init__(self):
-        super(MultiHeadAttention, self).__init__()
         self.n_heads = 8
+        self.d_model = 512
+class MultiHeadAttention(nn.Module):
+    def __init__(self, n_heads, d_model):
+        super(MultiHeadAttention, self).__init__()
+        self.n_heads = n_heads
         self.d_k = 64
         self.d_v = 64
-        self.d_model = 512
+        self.d_model = d_model
         self.W_Q = nn.Linear(self.d_model, self.d_k * self.n_heads, bias=False)
         self.W_K = nn.Linear(self.d_model, self.d_k * self.n_heads, bias=False)
         self.W_V = nn.Linear(self.d_model, self.d_v * self.n_heads, bias=False)
@@ -83,10 +89,10 @@ class MultiHeadAttention(nn.Module):
 
 
 class PoswiseFeedForwardNet(nn.Module):
-    def __init__(self):
+    def __init__(self, d_model):
         super(PoswiseFeedForwardNet, self).__init__()
         self.d_ff = 2048
-        self.d_model = 512
+        self.d_model = d_model
         self.fc = nn.Sequential(
             nn.Linear(self.d_model, self.d_ff, bias=False),
             nn.ReLU(),
@@ -100,10 +106,10 @@ class PoswiseFeedForwardNet(nn.Module):
 
 
 class EncoderLayer(nn.Module):
-    def __init__(self):
+    def __init__(self, n_heads, d_model):
         super(EncoderLayer, self).__init__()
-        self.enc_self_attn = MultiHeadAttention()
-        self.pos_ffn = PoswiseFeedForwardNet()
+        self.enc_self_attn = MultiHeadAttention(n_heads, d_model)
+        self.pos_ffn = PoswiseFeedForwardNet(d_model)
 
     def forward(self, enc_inputs, enc_self_attn_mask):
         enc_outputs, attn = self.enc_self_attn(
@@ -113,39 +119,34 @@ class EncoderLayer(nn.Module):
 
 
 class DecoderLayer(nn.Module):
-    def __init__(self):
+    def __init__(self, n_heads, d_model):
         super(DecoderLayer, self).__init__()
-        self.dec_self_attn = MultiHeadAttention()
-        self.dec_enc_attn = MultiHeadAttention()
-        self.pos_ffn = PoswiseFeedForwardNet()
+        self.dec_self_attn = MultiHeadAttention(n_heads, d_model)
+        self.dec_enc_attn = MultiHeadAttention(n_heads, d_model)
+        self.pos_ffn = PoswiseFeedForwardNet(d_model)
 
     def forward(self, dec_inputs, enc_outputs, dec_self_attn_mask, dec_enc_attn_mask):
-        dec_outputs, dec_self_attn = self.dec_self_attn(
-            dec_inputs, dec_inputs, dec_inputs, dec_self_attn_mask)
-        dec_outputs, dec_enc_attn = self.dec_enc_attn(
-            dec_outputs, enc_outputs, enc_outputs, dec_enc_attn_mask)
+        dec_outputs, dec_self_attn = self.dec_self_attn(dec_inputs, dec_inputs, dec_inputs, dec_self_attn_mask)
+        dec_outputs, dec_enc_attn = self.dec_enc_attn(dec_outputs, enc_outputs, enc_outputs, dec_enc_attn_mask)
         dec_outputs = self.pos_ffn(dec_outputs)
         return dec_outputs, dec_self_attn, dec_enc_attn
 
 
 class Encoder(nn.Module):
-    def __init__(self):
+    def __init__(self, n_heads, d_model, n_layers, src_vocab_size):
         super(Encoder, self).__init__()
-        self.n_layers = 6
-        self.d_model = 512
-        self.src_vocab_size = 27
+        self.n_heads = n_heads
+        self.n_layers = n_layers
+        self.d_model = d_model
+        self.src_vocab_size = src_vocab_size
         self.src_emb = nn.Embedding(self.src_vocab_size, self.d_model)
         self.pos_emb = PositionalEncoding(self.d_model)
-        self.layers = nn.ModuleList([EncoderLayer()
-                                    for _ in range(self.n_layers)])
+        self.layers = nn.ModuleList([EncoderLayer(self.n_heads, self.d_model) for _ in range(self.n_layers)])
 
     def forward(self, enc_inputs):
-        enc_outputs = self.src_emb(
-            enc_inputs)
-        enc_outputs = self.pos_emb(enc_outputs.transpose(0, 1)).transpose(
-            0, 1)
-        enc_self_attn_mask = get_attn_pad_mask(
-            enc_inputs, enc_inputs)
+        enc_outputs = self.src_emb(enc_inputs)
+        enc_outputs = self.pos_emb(enc_outputs.transpose(0, 1)).transpose(0, 1)
+        enc_self_attn_mask = get_attn_pad_mask(enc_inputs, enc_inputs)
         enc_self_attns = []
         for layer in self.layers:
             enc_outputs, enc_self_attn = layer(enc_outputs, enc_self_attn_mask)
@@ -154,34 +155,27 @@ class Encoder(nn.Module):
 
 
 class Decoder(nn.Module):
-    def __init__(self):
+    def __init__(self, n_heads, d_model, n_layers, tgt_vocab_size):
         super(Decoder, self).__init__()
-        self.n_layers = 6
-        self.d_model = 512
-        self.tgt_vocab_size = 4
+        self.n_layers = n_layers
+        self.d_model = d_model
+        self.tgt_vocab_size = tgt_vocab_size
         self.tgt_emb = nn.Embedding(self.tgt_vocab_size, self.d_model)
         self.pos_emb = PositionalEncoding(self.d_model)
-        self.layers = nn.ModuleList([DecoderLayer()
-                                    for _ in range(self.n_layers)])
+        self.layers = nn.ModuleList([DecoderLayer(n_heads, d_model) for _ in range(self.n_layers)])
 
     def forward(self, dec_inputs, enc_inputs, enc_outputs):
-        dec_outputs = self.tgt_emb(
-            dec_inputs)
+        dec_outputs = self.tgt_emb(dec_inputs)
 
-        dec_outputs = self.pos_emb(dec_outputs.transpose(0, 1)).transpose(
-            0, 1)
+        dec_outputs = self.pos_emb(dec_outputs.transpose(0, 1)).transpose(0, 1)
 
-        dec_self_attn_pad_mask = get_attn_pad_mask(
-            dec_inputs, dec_inputs)
+        dec_self_attn_pad_mask = get_attn_pad_mask(dec_inputs, dec_inputs)
 
-        dec_self_attn_subsequence_mask = get_attn_subsequence_mask(
-            dec_inputs)
+        dec_self_attn_subsequence_mask = get_attn_subsequence_mask(dec_inputs)
 
-        dec_self_attn_mask = torch.gt(
-            (dec_self_attn_pad_mask + dec_self_attn_subsequence_mask), 0)
+        dec_self_attn_mask = torch.gt((dec_self_attn_pad_mask + dec_self_attn_subsequence_mask), 0)
 
-        dec_enc_attn_mask = get_attn_pad_mask(
-            dec_inputs, enc_inputs)
+        dec_enc_attn_mask = get_attn_pad_mask(dec_inputs, enc_inputs)
 
         dec_self_attns, dec_enc_attns = [], []
         for layer in self.layers:
@@ -193,14 +187,16 @@ class Decoder(nn.Module):
 
 
 class Transformer(nn.Module):
-    def __init__(self):
+    def __init__(self, n_heads, d_model, n_layers, src_vocab_size, tgt_vocab_size):
         super(Transformer, self).__init__()
-        self.d_model = 512
-        self.tgt_vocab_size = 4
-        self.encoder = Encoder()
-        self.decoder = Decoder()
-        self.projection = nn.Linear(
-            self.d_model, self.tgt_vocab_size, bias=False)
+        self.n_heads = n_heads
+        self.d_model = d_model
+        self.n_layers = n_layers
+        self.src_vocab_size = src_vocab_size
+        self.tgt_vocab_size = tgt_vocab_size
+        self.encoder = Encoder(self.n_heads, self.d_model, self.n_layers, self.src_vocab_size)
+        self.decoder = Decoder(self.n_heads, self.d_model, self.n_layers, self.tgt_vocab_size)
+        self.projection = nn.Linear(self.d_model, self.tgt_vocab_size, bias=False)
 
     def forward(self, enc_inputs, dec_inputs):
         enc_outputs, enc_self_attns = self.encoder(enc_inputs)

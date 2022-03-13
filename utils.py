@@ -1,34 +1,47 @@
+from dataclasses import dataclass
 import numpy as np
 import torch.utils.data as Data
 
 
-def data_generator(codebook, seq_len, data_num):
-    alphabet = [0, 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',
-                'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
-    res = []
+@dataclass
+class DataInfo:
+    alphabet: list
+    prob: np.ndarray
+    codebook: dict
+    seq_len: int
+    max_len: int
+    pad_symbol: chr
 
-    data = np.random.randint(1, 27, (data_num, seq_len))
-    data_t = []
-    data_t_replace = []
-    for i in range(data_num):
-        in_s = ""
-        in_d = data[i]
-        in_s = in_s.join(alphabet[order] for order in in_d)
-        out_s = ""
-        out_s = out_s.join(codebook[alphabet[order]] for order in in_d)
-        out_d = [int(k) for k in out_s]
-        out_dd = [int(k) for k in out_s]
-        while len(out_dd) < 50:
-            out_dd.append(2)
-            out_s += '2'
-        res.append([in_s, in_d, out_s, out_dd])
-        data_t.append(out_dd)
-        # replace##### 0 is zero-grad
-        out_d = [2 if x == 0 else x for x in out_d]
-        while len(out_d) < 50:
-            out_d.append(3)
-        data_t_replace.append(out_d)
-    return res, data, data_t, data_t_replace
+
+def data_generator(datainfo, batch_num):
+    # 2d array of alphabets
+    seq = np.random.choice(datainfo.alphabet, size=(batch_num, datainfo.seq_len), p=datainfo.prob)
+
+    # apply codebook to each symbol
+    code_symbolwise = np.vectorize(datainfo.codebook.__getitem__)(seq)
+
+    # merge binary codes (join) and add padding (ljust)
+    code_merged = [list(''.join(s_arr).ljust(datainfo.max_len, datainfo.pad_symbol)) for s_arr in code_symbolwise]
+    code = np.array(code_merged)
+
+    # generate sequence int
+    seq_chr_map = {c: i  for i, c in enumerate(datainfo.alphabet)}
+    seq_int = np.vectorize(seq_chr_map.get)(seq)
+
+    # generate onehot (currently not needed)
+    seq_onehot = np.zeros((seq.shape[0], seq.shape[1], len(seq_chr_map)))
+    idx_seq, idx_base = np.meshgrid(np.arange(seq.shape[0]), np.arange(seq.shape[1]))
+    seq_onehot[idx_seq, idx_base, seq_int.T] = 1
+
+    # generate code int
+    code_int = code.astype(int)
+
+    # generate onehot (currently not needed)
+    code_onehot = np.zeros((code.shape[0], code.shape[1], 3))  # assuming binary code (with padding)
+    idx_code, idx_bin = np.meshgrid(np.arange(code.shape[0]), np.arange(code.shape[1]))
+    code_onehot[idx_code, idx_bin, code_int.T] = 1
+
+    return seq, seq_int, code, code_int
 
 
 # Used for drawing to rotate the x-axis and y-axis
@@ -44,15 +57,32 @@ def rotate(nums):
     return res
 
 
-class MyDataSet(Data.Dataset):
-    def __init__(self, enc_inputs, dec_inputs, dec_outputs):
-        super(MyDataSet, self).__init__()
-        self.enc_inputs = enc_inputs
-        self.dec_inputs = dec_inputs
-        self.dec_outputs = dec_outputs
+# Plotting tool
+def draw_plot():
+    if epoch == 1:
+        real_out = [torch.argmax(outputs[x]).item() for x in range(0, 50)]
 
-    def __len__(self):
-        return self.enc_inputs.shape[0]
+        real_out = [0 if x == 2 else x for x in real_out]
+        real_out = [2 if x == 3 else x for x in real_out]
 
-    def __getitem__(self, idx):
-        return self.enc_inputs[idx], self.dec_inputs[idx], self.dec_outputs[idx]
+        label_out = [1 if x == 1 else x for x in dec_outputs[0]]
+        label_out = [0 if x == 2 else x for x in label_out]
+        label_out = [2 if x == 3 else x for x in label_out]
+
+        str_out = ""
+        print("output", str_out.join(str(i) for i in real_out))
+        for item in res:
+            if label_out == item[3]:
+                print(" label", item[2])
+                print("str", item[0])
+                y_label = item[0]
+        flag = 1
+
+        plt.figure(figsize=(10, 10.5))
+        plt.xticks([i for i in range(50)], [real_out[i]
+                   for i in range(len(real_out))])
+        plt.yticks([i for i in range(10)], [y_label[i]
+                   for i in range(len(y_label))])
+        plt.imshow(rotate(dec_enc_attns[5][0][7].detach().numpy()))
+        plt.show()
+    pass
