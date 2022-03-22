@@ -17,7 +17,7 @@ alphabet = ["a", "b", "c"]
 weight = np.array([2, 1, 1])
 prob = weight / np.sum(weight)
 
-num_epoch = 15
+num_epoch = 51
 batch_num = 50
 seq_len = 5
 max_len = 12
@@ -39,7 +39,7 @@ datainfo = DataInfo(
 n_heads, d_model, n_layers, src_vocab_size, tgt_vocab_size = 8, 512, 6, len(alphabet), 3
 model = Transformer(n_heads, d_model, n_layers, src_vocab_size, tgt_vocab_size)
 criterion = nn.MSELoss()
-optimizer = optim.SGD(model.parameters(), lr=1e-3, momentum=0.99)
+optimizer = optim.SGD(model.parameters(), lr=1e-4, momentum=0.99)
 
 # Train
 for epoch in range(num_epoch):
@@ -53,6 +53,6 @@ for epoch in range(num_epoch):
     loss.backward()
     optimizer.step()
 
-    if epoch == 10:
+    if epoch == 50:
         draw_plot(outputs, code_int.view(-1), dec_enc_attns, seq)
     print("Epoch:", "%04d" % (epoch + 1), "loss =", f"{loss}")
