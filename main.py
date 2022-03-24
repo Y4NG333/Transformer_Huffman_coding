@@ -17,7 +17,7 @@ alphabet = ["a", "b", "c"]
 weight = np.array([2, 1, 1])
 prob = weight / np.sum(weight)
 
-num_epoch = 51
+num_epoch = 21
 batch_num = 50
 seq_len = 5
 max_len = 12
@@ -53,6 +53,11 @@ for epoch in range(num_epoch):
     loss.backward()
     optimizer.step()
 
-    if epoch == 50:
+    if epoch == 20:
         draw_plot(outputs, code_int.view(-1), dec_enc_attns, seq)
     print("Epoch:", "%04d" % (epoch + 1), "loss =", f"{loss}")
+
+path_model = "./model/"
+if not os.path.exists(path_model):
+    os.makedirs(path_model)
+torch.save(model.state_dict(), path_model + str(20) + "net.pth")
