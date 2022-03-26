@@ -20,6 +20,7 @@ prob = weight / np.sum(weight)
 seq_len = 5
 max_len = 12
 pad_symbol = "2"
+test_nums = 10
 
 weighted_tuple = [(alphabet[i], weight[i]) for i in range(len(alphabet))]
 codebook = huffman.codebook(weighted_tuple)
@@ -43,7 +44,7 @@ model_test = Transformer(n_heads, d_model, n_layers, src_vocab_size, tgt_vocab_s
 model_test.load_state_dict(torch.load(path_model + str(20) + "net.pth"))
 
 # Generate test set
-seq, seq_int, code, code_int, code_onehot = data_generator(datainfo, 10)
+seq, seq_int, code, code_int, code_onehot = data_generator(datainfo, test_nums)
 seq_int = torch.LongTensor(seq_int)
 code_int = torch.LongTensor(code_int)
 outputs, enc_self_attns, dec_self_attns, dec_enc_attns = model_test(seq_int, code_int)
