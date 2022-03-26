@@ -50,7 +50,7 @@ code_int = torch.LongTensor(code_int)
 outputs, enc_self_attns, dec_self_attns, dec_enc_attns = model_test(seq_int, code_int)
 real_out = [torch.argmax(x).item() for x in outputs]
 
-print("real out", np.array(real_out).reshape(-1, 12))
+print("real out", np.array(real_out).reshape(-1, max_len))
 print("code int", code_int)
 loss = criterion(outputs.float(), torch.LongTensor(code_onehot).view(-1, 3).float())
 print("loss =", f"{loss}")
