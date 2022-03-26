@@ -21,6 +21,7 @@ seq_len = 5
 max_len = 12
 pad_symbol = "2"
 test_nums = 10
+fname = "./model/20net.pth"
 
 weighted_tuple = [(alphabet[i], weight[i]) for i in range(len(alphabet))]
 codebook = huffman.codebook(weighted_tuple)
@@ -41,7 +42,7 @@ n_heads, d_model, n_layers, src_vocab_size, tgt_vocab_size = 8, 512, 6, len(alph
 # Load model parameters
 path_model = "./model/"
 model_test = Transformer(n_heads, d_model, n_layers, src_vocab_size, tgt_vocab_size)
-model_test.load_state_dict(torch.load(path_model + str(20) + "net.pth"))
+model_test.load_state_dict(torch.load(fname))
 
 # Generate test set
 seq, seq_int, code, code_int, code_onehot = data_generator(datainfo, test_nums)
