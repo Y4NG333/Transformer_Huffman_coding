@@ -14,7 +14,7 @@ from utils import data_generator, DataInfo, draw_plot
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 alphabet = ["a", "b", "c"]
-weight = np.array([1, 1, 1])
+weight = np.array([2, 1, 1])
 prob = weight / np.sum(weight)
 
 num_epoch = 21
