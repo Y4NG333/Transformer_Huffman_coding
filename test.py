@@ -17,8 +17,6 @@ alphabet = ["a", "b", "c"]
 weight = np.array([2, 1, 1])
 prob = weight / np.sum(weight)
 
-num_epoch = 21
-batch_num = 50
 seq_len = 5
 max_len = 12
 pad_symbol = "2"
