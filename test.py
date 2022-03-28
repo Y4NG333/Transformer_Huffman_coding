@@ -22,7 +22,7 @@ max_len = 12
 pad_symbol = "2"
 test_nums = 10
 dimension = 3
-fname = "./model/20net.pth"
+fname = "./model/100net.pth"
 
 weighted_tuple = [(alphabet[i], weight[i]) for i in range(len(alphabet))]
 codebook = huffman.codebook(weighted_tuple)
