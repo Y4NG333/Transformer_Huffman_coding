@@ -8,6 +8,7 @@ import torch.utils.data as Data
 
 from matplotlib import pyplot as plt
 from model import Transformer
+from torch.optim import lr_scheduler
 from utils import data_generator, DataInfo, draw_plot
 
 # Used to configure the environment
@@ -17,11 +18,13 @@ alphabet = ["a", "b", "c"]
 weight = np.array([2, 1, 1])
 prob = weight / np.sum(weight)
 
-num_epoch = 21
+num_epoch = 101
 batch_num = 50
 seq_len = 5
 max_len = 12
 pad_symbol = "2"
+dimension = 3
+fname = "./model/100net.pth"
 
 weighted_tuple = [(alphabet[i], weight[i]) for i in range(len(alphabet))]
 codebook = huffman.codebook(weighted_tuple)
@@ -39,7 +42,8 @@ datainfo = DataInfo(
 n_heads, d_model, n_layers, src_vocab_size, tgt_vocab_size = 8, 512, 6, len(alphabet), 3
 model = Transformer(n_heads, d_model, n_layers, src_vocab_size, tgt_vocab_size)
 criterion = nn.MSELoss()
-optimizer = optim.SGD(model.parameters(), lr=1e-4, momentum=0.99)
+optimizer = optim.SGD(model.parameters(), lr=1e-5, momentum=0.99)
+scheduler = lr_scheduler.MultiStepLR(optimizer, milestones=[50], gamma=0.05)
 
 # Train
 for epoch in range(num_epoch):
@@ -49,15 +53,15 @@ for epoch in range(num_epoch):
 
     optimizer.zero_grad()
     outputs, enc_self_attns, dec_self_attns, dec_enc_attns = model(seq_int, code_int)
-    loss = criterion(outputs.float(), torch.LongTensor(code_onehot).view(-1, 3).float())
+    loss = criterion(outputs.float(), torch.LongTensor(code_onehot).view(-1, dimension).float())
     loss.backward()
     optimizer.step()
 
-    if epoch == 20:
+    if epoch == 100:
         draw_plot(outputs, code_int.view(-1), dec_enc_attns, seq)
     print("Epoch:", "%04d" % (epoch + 1), "loss =", f"{loss}")
 
 path_model = "./model/"
 if not os.path.exists(path_model):
     os.makedirs(path_model)
-torch.save(model.state_dict(), path_model + str(20) + "net.pth")
+torch.save(model.state_dict(), fname)
