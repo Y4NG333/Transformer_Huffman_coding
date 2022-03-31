@@ -1,12 +1,21 @@
-1. This time, the attention map drawing function is mainly added.
+In the attention map section, I added a new graph with a different y-axis than the previous graph.
 
-2. The encoding method is also changed to one-hot encoding.
-for example: 0 is replaced by vector 0 0 1, 1 is replaced by vector 0 1 0, 2 is replaced by vector 1 0 0.
-The drawn attention map is as follows: 
+The previous y-axis is a sequence of a, b, c, and the second graph's y-axis is just 0, 1, 2. 
 
-![image](https://user-images.githubusercontent.com/91429283/159280903-6ed43d28-857c-4c4d-9fb3-c260f9244c3b.png)
+As shown in the figure, among 0,1,2, the color of 1 is brighter.
 
-![image](https://user-images.githubusercontent.com/91429283/159281099-5c738377-c5fc-4678-8177-a3255b17c1af.png)
+The model thinks that the character in the first position of the output sequence is 1,and the result is indeed 1. 
 
-![image](https://user-images.githubusercontent.com/91429283/159281245-b0466bfe-9968-4887-aa3f-9c58141b0261.png)
+![33RS% I`1$W1AQ7 AA57$_O](https://user-images.githubusercontent.com/91429283/160992368-0d54425b-9903-446d-a9e7-9f0303cc283c.png)
 
+As in this picture:
+
+The input sequence is: aaaaa, and the output is also very accurate to give 00000222... (2 is padding). 
+
+![I ZHQAXTE5IR9L32GUI8 3Y](https://user-images.githubusercontent.com/91429283/160992743-ce51038f-2d73-481d-a3d0-4930c9b8c0e7.png)
+
+Through repeated tests, I think the effect of the process of ababa->0101 is very good. 
+
+But when the y-axis is changed to a sequence consisting of a, b, and c, which is the case in the first picture,
+
+it is very different from what we expected. 

@@ -44,7 +44,7 @@ def get_attn_subsequence_mask(seq):
 class ScaledDotProductAttention(nn.Module):
     def __init__(self):
         super(ScaledDotProductAttention, self).__init__()
-        self.d_k = 64
+        self.d_k = 128
 
     def forward(self, Q, K, V, attn_mask):
         scores = torch.matmul(Q, K.transpose(-1, -2)) / np.sqrt(self.d_k)
@@ -59,8 +59,8 @@ class MultiHeadAttention(nn.Module):
     def __init__(self, n_heads, d_model):
         super(MultiHeadAttention, self).__init__()
         self.n_heads = n_heads
-        self.d_k = 64
-        self.d_v = 64
+        self.d_k = 128
+        self.d_v = 128
         self.d_model = d_model
         self.W_Q = nn.Linear(self.d_model, self.d_k * self.n_heads, bias=False)
         self.W_K = nn.Linear(self.d_model, self.d_k * self.n_heads, bias=False)
@@ -83,7 +83,7 @@ class MultiHeadAttention(nn.Module):
 class PoswiseFeedForwardNet(nn.Module):
     def __init__(self, d_model):
         super(PoswiseFeedForwardNet, self).__init__()
-        self.d_ff = 2048
+        self.d_ff = 4096
         self.d_model = d_model
         self.fc = nn.Sequential(
             nn.Linear(self.d_model, self.d_ff, bias=False),

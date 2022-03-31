@@ -64,3 +64,12 @@ def draw_plot(outputs, labels, dec_enc_attns, seq):
     plt.yticks([i for i in range(5)], [seq[0][i] for i in range(len(seq[0]))])
     plt.imshow(attn)
     plt.show()
+
+    plt.figure(figsize=(10, 10.5))
+    plt.yticks([i for i in range(3)], [0, 1, 2])
+    plt.xticks([i for i in range(12)], [real_out[i] for i in range(len(real_out))])
+    tu = outputs[0:12].detach().numpy()
+    tu += 1
+    tu = list(map(list, zip(*tu)))
+    plt.imshow(tu)
+    plt.show()
