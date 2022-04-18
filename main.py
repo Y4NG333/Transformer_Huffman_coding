@@ -29,13 +29,11 @@ opt = parser.parse_args()
 alphabet = ["a", "b", "c"]
 weight = np.array([2, 1, 1])
 prob = weight / np.sum(weight)
-
+pad_symbol = "0"
 seq_len = 5
 max_len = 12
-pad_symbol = "0"
 tgt_vocab_size = 4
 src_vocab_size = len(alphabet) + 1
-
 weighted_tuple = [(alphabet[i], weight[i]) for i in range(len(alphabet))]
 codebook = huffman.codebook(weighted_tuple)
 
@@ -57,24 +55,26 @@ datainfo = DataInfo(
 model = Transformer(opt.n_heads, opt.d_model, opt.n_layers, src_vocab_size, tgt_vocab_size)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=opt.lr, betas=(0.9, 0.999))
-scheduler = lr_scheduler.MultiStepLR(optimizer, milestones=[opt.lr_scheduler_b, opt.lr_scheduler_e], gamma=opt.lr_gamma)
+
+scheduler = lr_scheduler.MultiStepLR(
+    optimizer, milestones=[opt.lr_scheduler_b, opt.lr_scheduler_e], gamma=opt.lr_gamma
+)
 
 # Train
 for epoch in range(opt.num_epoch):
-    seq, seq_int, code, code_int, code_onehot = data_generator(datainfo, opt.batch_num)
+    seq, seq_int, code, code_int, code_onehot, code_int_c = data_generator(datainfo, opt.batch_num)
     seq_int = torch.LongTensor(seq_int)
     code_int = torch.LongTensor(code_int)
-
     optimizer.zero_grad()
     outputs, enc_self_attns, dec_self_attns, dec_enc_attns = model(seq_int, code_int)
-    loss = criterion(outputs.float(), torch.LongTensor(code_onehot).view(-1, dimension).float())
+    loss = criterion(outputs, torch.LongTensor(code_int_c).view(-1))
     loss.backward()
     optimizer.step()
     scheduler.step()
-    
+
     # plot
     if epoch == opt.epoch_plot:
-        draw_plot(outputs, code_int.view(-1), dec_enc_attns, seq)
+        draw_plot(outputs, torch.LongTensor(code_int_c).view(-1), dec_enc_attns, seq)
     print("Epoch:", "%04d" % (epoch + 1), "loss =", f"{loss}")
 
 # save the model
