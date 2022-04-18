@@ -9,11 +9,13 @@ from model import Transformer
 from utils import data_generator, DataInfo, draw_plot
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--test_nums", type=int, default=10, help="size of the test")
+parser.add_argument("--path_model", type=str, default="./model/300net.pth", help="the path of model")
+parser.add_argument("--test_nums", type=int, default=1, help="size of the test")
 parser.add_argument("--n_heads", type=int, default=8, help="the nums of attention")
-parser.add_argument("--d_model", type=int, default=512, help="the dimmension of vocab")
+parser.add_argument("--d_model", type=int, default=256, help="the dimmension of vocab")
 parser.add_argument("--n_layers", type=int, default=6, help="the nums of layer")
-parser.add_argument("--fname", type=str, default="./model/100net.pth", help="the name of the model ")
+parser.add_argument("--sentence", type=str, default="abcab", help="length 5 sequences ")
+parser.add_argument("--fname", type=str, default="./model/300net.pth", help="the name of the model ")
 opt = parser.parse_args()
 
 alphabet = ["a", "b", "c"]
@@ -22,10 +24,9 @@ prob = weight / np.sum(weight)
 
 seq_len = 5
 max_len = 12
-pad_symbol = "2"
-dimension = 3
-src_vocab_size = len(alphabet)
-tgt_vocab_size = 3
+pad_symbol = "0"
+src_vocab_size = len(alphabet) + 1
+tgt_vocab_size = 4
 
 weighted_tuple = [(alphabet[i], weight[i]) for i in range(len(alphabet))]
 codebook = huffman.codebook(weighted_tuple)
