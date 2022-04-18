@@ -4,10 +4,7 @@ import numpy as np
 import os
 import torch
 import torch.nn as nn
-import torch.optim as optim
-import torch.utils.data as Data
 
-from matplotlib import pyplot as plt
 from model import Transformer
 from utils import data_generator, DataInfo, draw_plot
 
@@ -18,9 +15,6 @@ parser.add_argument("--d_model", type=int, default=512, help="the dimmension of 
 parser.add_argument("--n_layers", type=int, default=6, help="the nums of layer")
 parser.add_argument("--fname", type=str, default="./model/100net.pth", help="the name of the model ")
 opt = parser.parse_args()
-
-# Used to configure the environment
-os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 alphabet = ["a", "b", "c"]
 weight = np.array([2, 1, 1])
@@ -58,7 +52,5 @@ code_int = torch.LongTensor(code_int)
 outputs, enc_self_attns, dec_self_attns, dec_enc_attns = model_test(seq_int, code_int)
 real_out = [torch.argmax(x).item() for x in outputs]
 
-print("real out", np.array(real_out).reshape(-1, max_len))
-print("code int", code_int)
 loss = criterion(outputs.float(), torch.LongTensor(code_onehot).view(-1, dimension).float())
 print("loss =", f"{loss}")
