@@ -64,6 +64,9 @@ def data_generator(datainfo, batch_num):
 # Plotting tool
 def draw_plot(outputs, labels, dec_enc_attns, seq):
     real_out = [torch.argmax(x).item() for x in outputs]
+    replace = {2: 0, 0: 2, 1: 1}
+    real_out = np.vectorize(replace.get)(real_out)
+    label = np.vectorize(replace.get)([labels[x].item() for x in range(0, 12)])
     attn = dec_enc_attns[5][0][7].detach().numpy()
     attn = list(map(list, zip(*attn)))
 
