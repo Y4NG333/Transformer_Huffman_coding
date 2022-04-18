@@ -5,9 +5,7 @@ import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import torch.utils.data as Data
 
-from matplotlib import pyplot as plt
 from model import Transformer
 from torch.optim import lr_scheduler
 from utils import data_generator, DataInfo, draw_plot
@@ -26,9 +24,7 @@ parser.add_argument("--n_layers", type=int, default=6, help="the nums of layer")
 parser.add_argument("--fname", type=str, default="./model/100net.pth", help="the name of the model ")
 opt = parser.parse_args()
 
-# Used to configure the environment
-os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
-
+# generate the dataset
 alphabet = ["a", "b", "c"]
 weight = np.array([2, 1, 1])
 prob = weight / np.sum(weight)
@@ -71,11 +67,13 @@ for epoch in range(opt.num_epoch):
     loss.backward()
     optimizer.step()
     scheduler.step()
-
+    
+    # plot
     if epoch == opt.epoch_plot:
         draw_plot(outputs, code_int.view(-1), dec_enc_attns, seq)
     print("Epoch:", "%04d" % (epoch + 1), "loss =", f"{loss}")
 
+# save the model
 path_model = "./model/"
 if not os.path.exists(path_model):
     os.makedirs(path_model)
