@@ -31,6 +31,11 @@ tgt_vocab_size = 4
 weighted_tuple = [(alphabet[i], weight[i]) for i in range(len(alphabet))]
 codebook = huffman.codebook(weighted_tuple)
 
+print(codebook)
+for item in codebook:
+    codebook[item] = codebook[item].replace("0", "2")
+print(codebook)
+
 datainfo = DataInfo(
     alphabet=alphabet,
     prob=prob,
