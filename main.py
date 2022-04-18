@@ -55,9 +55,9 @@ datainfo = DataInfo(
 
 # Define model
 model = Transformer(opt.n_heads, opt.d_model, opt.n_layers, src_vocab_size, tgt_vocab_size)
-criterion = nn.MSELoss()
-optimizer = optim.SGD(model.parameters(), lr=opt.lr, momentum=opt.momentum)
-scheduler = lr_scheduler.MultiStepLR(optimizer, milestones=[opt.lr_scheduler], gamma=opt.lr_gamma)
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters(), lr=opt.lr, betas=(0.9, 0.999))
+scheduler = lr_scheduler.MultiStepLR(optimizer, milestones=[opt.lr_scheduler_b, opt.lr_scheduler_e], gamma=opt.lr_gamma)
 
 # Train
 for epoch in range(opt.num_epoch):
