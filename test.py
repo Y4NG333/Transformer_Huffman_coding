@@ -44,7 +44,6 @@ datainfo = DataInfo(
     max_len=max_len,
     pad_symbol=pad_symbol,
 )
-criterion = nn.MSELoss()
 
 # Load model
 path_model = "./model/"
@@ -52,11 +51,13 @@ model_test = Transformer(opt.n_heads, opt.d_model, opt.n_layers, src_vocab_size,
 model_test.load_state_dict(torch.load(opt.fname))
 
 # Generate test set
-seq, seq_int, code, code_int, code_onehot = data_generator(datainfo, opt.test_nums)
+criterion = nn.CrossEntropyLoss()
+seq, seq_int, code, code_int, code_onehot, code_int_c = data_generator(datainfo, opt.test_nums)
 seq_int = torch.LongTensor(seq_int)
 code_int = torch.LongTensor(code_int)
 outputs, enc_self_attns, dec_self_attns, dec_enc_attns = model_test(seq_int, code_int)
 real_out = [torch.argmax(x).item() for x in outputs]
 
-loss = criterion(outputs.float(), torch.LongTensor(code_onehot).view(-1, dimension).float())
+loss = criterion(outputs, torch.LongTensor(code_int_c).view(-1))  # code_int.view(-1)
 print("loss =", f"{loss}")
+draw_plot(outputs, torch.LongTensor(code_int_c).view(-1), dec_enc_attns, seq)
