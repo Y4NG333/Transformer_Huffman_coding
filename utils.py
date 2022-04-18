@@ -44,13 +44,21 @@ def data_generator(datainfo, batch_num):
     # [0 0 1 1 1 0 0 2 2 2 2 2]
     code_int = code.astype(int)
 
+    code_int_b = []
+    for item in code_int:
+        cur = [3]
+        for i in range(len(item) - 1):
+            cur.append(item[i])
+        code_int_b.append(cur)
+    code_int_b = np.array(code_int_b)
+
     # generate onehot (currently not needed)
-    code_onehot = np.zeros((code.shape[0], code.shape[1], 3))  # assuming binary code (with padding)
+    code_onehot = np.zeros((code.shape[0], code.shape[1], 4))
     idx_code, idx_bin = np.meshgrid(np.arange(code.shape[0]), np.arange(code.shape[1]))
     code_onehot[idx_code, idx_bin, code_int.T] = 1
-    # code_onehot = code_onehot.reshape(600,3)
 
-    return seq, seq_int, code, code_int, code_onehot
+    seq_int += 1
+    return seq, seq_int, code, code_int_b, code_onehot, code_int
 
 
 # Plotting tool
