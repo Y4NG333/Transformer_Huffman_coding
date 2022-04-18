@@ -8,6 +8,7 @@ import torch.nn as nn
 from model import Transformer
 from utils import data_generator, DataInfo, draw_plot
 
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--path_model", type=str, default="./model/300net.pth", help="the path of model")
 parser.add_argument("--test_nums", type=int, default=1, help="size of the test")
@@ -22,13 +23,11 @@ opt = parser.parse_args()
 alphabet = ["a", "b", "c"]
 weight = np.array([2, 1, 1])
 prob = weight / np.sum(weight)
-
 seq_len = 5
 max_len = 12
 pad_symbol = "0"
 src_vocab_size = len(alphabet) + 1
 tgt_vocab_size = 4
-
 weighted_tuple = [(alphabet[i], weight[i]) for i in range(len(alphabet))]
 codebook = huffman.codebook(weighted_tuple)
 
@@ -51,11 +50,12 @@ path_model = "./model/"
 model_test = Transformer(opt.n_heads, opt.d_model, opt.n_layers, src_vocab_size, tgt_vocab_size)
 model_test.load_state_dict(torch.load(opt.fname))
 
-# Generate test set
 criterion = nn.CrossEntropyLoss()
+
 seq, seq_int, code, code_int, code_onehot, code_int_c = data_generator(datainfo, opt.test_nums)
 seq_int = torch.LongTensor(seq_int)
 code_int = torch.LongTensor(code_int)
+
 outputs, enc_self_attns, dec_self_attns, dec_enc_attns = model_test(seq_int, code_int)
 real_out = [torch.argmax(x).item() for x in outputs]
 
