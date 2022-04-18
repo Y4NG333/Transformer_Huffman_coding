@@ -11,17 +11,18 @@ from torch.optim import lr_scheduler
 from utils import data_generator, DataInfo, draw_plot
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--num_epoch", type=int, default=101, help="number of epochs of training")
+parser.add_argument("--num_epoch", type=int, default=300, help="number of epochs of training")
 parser.add_argument("--batch_num", type=int, default=50, help="size of the batches")
-parser.add_argument("--lr", type=float, default=1e-5, help="sgd: learning rate")
+parser.add_argument("--lr", type=float, default=0.0001, help="sgd: learning rate")
 parser.add_argument("--momentum", type=float, default=0.99, help="sgd: momentum")
-parser.add_argument("--epoch_plot", type=int, default=100, help="the epoch of plotting")
-parser.add_argument("--lr_scheduler", type=int, default=50, help="the epoch of lr_scheduler")
-parser.add_argument("--lr_gamma", type=float, default=0.05, help="the gamma of lr_scheduler")
+parser.add_argument("--epoch_plot", type=int, default=280, help="the epoch of plotting")
+parser.add_argument("--lr_scheduler_b", type=int, default=200, help="the epoch of lr_scheduler")
+parser.add_argument("--lr_scheduler_e", type=int, default=300, help="the epoch of lr_scheduler")
+parser.add_argument("--lr_gamma", type=float, default=0.1, help="the gamma of lr_scheduler")
 parser.add_argument("--n_heads", type=int, default=8, help="the nums of attention")
-parser.add_argument("--d_model", type=int, default=512, help="the dimmension of vocab")
+parser.add_argument("--d_model", type=int, default=256, help="the dimmension of vocab")
 parser.add_argument("--n_layers", type=int, default=6, help="the nums of layer")
-parser.add_argument("--fname", type=str, default="./model/100net.pth", help="the name of the model ")
+parser.add_argument("--fname", type=str, default="./model/300net.pth", help="the name of the model ")
 opt = parser.parse_args()
 
 # generate the dataset
@@ -31,11 +32,9 @@ prob = weight / np.sum(weight)
 
 seq_len = 5
 max_len = 12
-pad_symbol = "2"
-dimension = 3
-tgt_vocab_size = 3
-src_vocab_size = len(alphabet)
-fname = "./model/100net.pth"
+pad_symbol = "0"
+tgt_vocab_size = 4
+src_vocab_size = len(alphabet) + 1
 
 weighted_tuple = [(alphabet[i], weight[i]) for i in range(len(alphabet))]
 codebook = huffman.codebook(weighted_tuple)
