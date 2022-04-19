@@ -15,7 +15,7 @@ parser.add_argument("--test_nums", type=int, default=1, help="size of the test")
 parser.add_argument("--n_heads", type=int, default=8, help="the nums of attention")
 parser.add_argument("--d_model", type=int, default=256, help="the dimmension of vocab")
 parser.add_argument("--n_layers", type=int, default=6, help="the nums of layer")
-parser.add_argument("--sentence", type=str, default="abcab", help="length 5 sequences ")
+parser.add_argument("--sequence", type=str, default="abcab", help="length 5 sequences ")
 parser.add_argument("--fname", type=str, default="./model/300net.pth", help="the name of the model ")
 opt = parser.parse_args()
 
@@ -41,8 +41,8 @@ print("loss =", f"{loss}")
 draw_plot(outputs, torch.LongTensor(code_int_c).view(-1), dec_enc_attns, seq)
 
 
-def inference(sentence):
-    sentence_n = [item for item in sentence]
+def inference(sequence):
+    sentence_n = [item for item in sequence]
     code_symbolwise = np.vectorize(datainfo.codebook.__getitem__)(sentence_n)
     seq_chr_map = {c: i for i, c in enumerate(datainfo.alphabet)}
     seq_int = np.vectorize(seq_chr_map.get)(sentence_n)
@@ -72,4 +72,4 @@ def inference(sentence):
 
 
 print("translate_sentence")
-inference(opt.sentence)
+inference(opt.sequence)
