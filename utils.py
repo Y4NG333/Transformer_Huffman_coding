@@ -94,14 +94,17 @@ def replace(inputs):
 
 # Plotting tool
 def draw_plot(outputs, labels, dec_enc_attns, seq):
+    seq_len = 5
+    max_len = 12
     real_out = [torch.argmax(x).item() for x in outputs]
     real_out = replace(real_out)
-    label = replace([labels[x].item() for x in range(0, 12)])
+    label = replace([labels[x].item() for x in range(0, max_len)])
     attn = dec_enc_attns[5][0][7].detach().numpy()
     attn = list(map(list, zip(*attn)))
 
     plt.figure(figsize=(10, 10.5))
-    plt.xticks([i for i in range(12)], [real_out[i] for i in range(len(real_out))])
-    plt.yticks([i for i in range(5)], [seq[0][i] for i in range(len(seq[0]))])
+    plt.xticks([i for i in range(max_len)], [real_out[i] for i in range(len(real_out))])
+    plt.yticks([i for i in range(seq_len)], [seq[0][i] for i in range(len(seq[0]))])
     plt.imshow(attn)
     plt.show()
+
