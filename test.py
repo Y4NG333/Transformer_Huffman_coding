@@ -65,7 +65,7 @@ def inference(sequence):
     # get dec_input
     dec_input = torch.zeros(1, 0).type_as(seq_int.data)
     next_symbol = 3
-    for i in range(max_len):
+    for i in range(datainfo.max_len):
         dec_input = torch.cat([dec_input.detach(), torch.tensor([[next_symbol]])], -1)
         dec_outputs, dec_self_attns, dec_enc_attns = model_test.decoder(dec_input, seq_int, enc_outputs)
         projected = model_test.projection(dec_outputs)
@@ -76,7 +76,9 @@ def inference(sequence):
     # output
     predict, _, _, _ = model_test(seq_int, dec_input)
     predict = predict.data.max(1, keepdim=True)[1]
-    print("output", [n.item() for n in predict.squeeze()])
+    output = [n.item() for n in predict.squeeze()]
+    output = np.array(output)
+    print("output", output)
     print("label",label)
     if label.all() == output.all():
         print("correct")
