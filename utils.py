@@ -85,12 +85,17 @@ def dataset_gen():
     )
     return datainfo,src_vocab_size,tgt_vocab_size
 
+
+def replace(inputs):
+    replace_dict = {2: 0, 0: 2, 1: 1}
+    outputs = np.vectorize(replace_dict.get)(inputs)
+    return outputs
+
 # Plotting tool
 def draw_plot(outputs, labels, dec_enc_attns, seq):
     real_out = [torch.argmax(x).item() for x in outputs]
-    replace = {2: 0, 0: 2, 1: 1}
-    real_out = np.vectorize(replace.get)(real_out)
-    label = np.vectorize(replace.get)([labels[x].item() for x in range(0, 12)])
+    real_out = replace(real_out)
+    label = replace([labels[x].item() for x in range(0, 12)])
     attn = dec_enc_attns[5][0][7].detach().numpy()
     attn = list(map(list, zip(*attn)))
 
