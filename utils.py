@@ -60,6 +60,30 @@ def data_generator(datainfo, batch_num):
     seq_int += 1
     return seq, seq_int, code, code_int_b, code_onehot, code_int
 
+def dataset_gen():
+    alphabet = ["a", "b", "c"]
+    weight = np.array([2, 1, 1])
+    prob = weight / np.sum(weight)
+    pad_symbol = "0"
+    seq_len = 5
+    max_len = 12
+    tgt_vocab_size = 4
+    src_vocab_size = len(alphabet) + 1
+    weighted_tuple = [(alphabet[i], weight[i]) for i in range(len(alphabet))]
+    codebook = huffman.codebook(weighted_tuple)
+    
+    for item in codebook:
+        codebook[item] = codebook[item].replace("0", "2")
+    
+    datainfo = DataInfo(
+        alphabet=alphabet,
+        prob=prob,
+        codebook=codebook,
+        seq_len=seq_len,
+        max_len=max_len,
+        pad_symbol=pad_symbol,
+    )
+    return datainfo,src_vocab_size,tgt_vocab_size
 
 # Plotting tool
 def draw_plot(outputs, labels, dec_enc_attns, seq):
