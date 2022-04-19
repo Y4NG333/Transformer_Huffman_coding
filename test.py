@@ -41,12 +41,20 @@ print("loss =", f"{loss}")
 draw_plot(outputs, torch.LongTensor(code_int_c).view(-1), dec_enc_attns, seq)
 
 
-def inference(sequence):
-    sentence_n = [item for item in sequence]
+def get_seq_int(sequence):
+    sentence_n = [[item for item in sequence]]
     code_symbolwise = np.vectorize(datainfo.codebook.__getitem__)(sentence_n)
+    code_merged = [list("".join(s_arr).ljust(datainfo.max_len, datainfo.pad_symbol)) for s_arr in code_symbolwise]
+    code = np.array(code_merged)
+    code_int = code.astype(int)
     seq_chr_map = {c: i for i, c in enumerate(datainfo.alphabet)}
     seq_int = np.vectorize(seq_chr_map.get)(sentence_n)
     seq_int += 1
+    return seq_int,code_int[0]
+
+
+def inference(sequence):
+    seq_int,label = get_seq_int(sequence)
     print("input", seq_int)
 
     # encoder
@@ -69,6 +77,7 @@ def inference(sequence):
     predict, _, _, _ = model_test(seq_int, dec_input)
     predict = predict.data.max(1, keepdim=True)[1]
     print("output", [n.item() for n in predict.squeeze()])
+    print("label",label)
 
 
 print("translate_sentence")
