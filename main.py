@@ -38,16 +38,17 @@ for epoch in range(opt.num_epoch):
     seq, seq_int, code, code_int, code_onehot, code_int_c = data_generator(datainfo, opt.batch_num)
     seq_int = torch.LongTensor(seq_int)
     code_int = torch.LongTensor(code_int)
+    code_int_c = torch.LongTensor(code_int_c)
     optimizer.zero_grad()
     outputs, enc_self_attns, dec_self_attns, dec_enc_attns = model(seq_int, code_int)
-    loss = criterion(outputs, torch.LongTensor(code_int_c).view(-1))
+    loss = criterion(outputs, code_int_c.view(-1))
     loss.backward()
     optimizer.step()
     scheduler.step()
 
     # plot
     if epoch == opt.epoch_plot:
-        draw_plot(outputs, torch.LongTensor(code_int_c).view(-1), dec_enc_attns, seq)
+        draw_plot(outputs, code_int_c.view(-1), dec_enc_attns, seq)
     print("Epoch:", "%04d" % (epoch + 1), "loss =", f"{loss}")
 
 # save the model
