@@ -24,31 +24,8 @@ parser.add_argument("--n_layers", type=int, default=6, help="the nums of layer")
 parser.add_argument("--fname", type=str, default="./model/300net.pth", help="the name of the model ")
 opt = parser.parse_args()
 
-# generate the dataset
-alphabet = ["a", "b", "c"]
-weight = np.array([2, 1, 1])
-prob = weight / np.sum(weight)
-seq_len = 5
-max_len = 12
-pad_symbol = "0"
-tgt_vocab_size = 4
-src_vocab_size = len(alphabet) + 1
-weighted_tuple = [(alphabet[i], weight[i]) for i in range(len(alphabet))]
-codebook = huffman.codebook(weighted_tuple)
-
-print(codebook)
-for item in codebook:
-    codebook[item] = codebook[item].replace("0", "2")
-print(codebook)
-
-datainfo = DataInfo(
-    alphabet=alphabet,
-    prob=prob,
-    codebook=codebook,
-    seq_len=seq_len,
-    max_len=max_len,
-    pad_symbol=pad_symbol,
-)
+#generate the dataset
+datainfo,src_vocab_size,tgt_vocab_size = dataset_gen()
 
 # Define model
 model = Transformer(opt.n_heads, opt.d_model, opt.n_layers, src_vocab_size, tgt_vocab_size)
