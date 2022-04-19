@@ -78,7 +78,10 @@ def inference(sequence):
     predict = predict.data.max(1, keepdim=True)[1]
     print("output", [n.item() for n in predict.squeeze()])
     print("label",label)
-
+    if label.all() == output.all():
+        print("correct")
+    else:
+        print("something wrong")
 
 print("translate_sentence")
 inference(opt.sequence)
