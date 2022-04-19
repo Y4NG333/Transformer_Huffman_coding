@@ -17,7 +17,6 @@ parser.add_argument("--lr", type=float, default=0.0001, help="sgd: learning rate
 parser.add_argument("--momentum", type=float, default=0.99, help="sgd: momentum")
 parser.add_argument("--epoch_plot", type=int, default=280, help="the epoch of plotting")
 parser.add_argument("--lr_scheduler_b", type=int, default=200, help="the epoch of lr_scheduler")
-parser.add_argument("--lr_scheduler_e", type=int, default=300, help="the epoch of lr_scheduler")
 parser.add_argument("--lr_gamma", type=float, default=0.1, help="the gamma of lr_scheduler")
 parser.add_argument("--n_heads", type=int, default=8, help="the nums of attention")
 parser.add_argument("--d_model", type=int, default=256, help="the dimmension of vocab")
@@ -55,7 +54,7 @@ datainfo = DataInfo(
 model = Transformer(opt.n_heads, opt.d_model, opt.n_layers, src_vocab_size, tgt_vocab_size)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=opt.lr, betas=(0.9, 0.999))
-scheduler = lr_scheduler.MultiStepLR(optimizer, milestones=[opt.lr_scheduler_b, opt.lr_scheduler_e], gamma=opt.lr_gamma)
+scheduler = lr_scheduler.MultiStepLR(optimizer, milestones=[opt.lr_scheduler_b], gamma=opt.lr_gamma)
 
 # Train
 for epoch in range(opt.num_epoch):
