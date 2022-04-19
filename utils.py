@@ -1,9 +1,10 @@
-from dataclasses import dataclass
+import torch
+import huffman
 import numpy as np
 import torch.utils.data as Data
-import torch
-from matplotlib import pyplot as plt
 
+from matplotlib import pyplot as plt
+from dataclasses import dataclass
 
 @dataclass
 class DataInfo:
