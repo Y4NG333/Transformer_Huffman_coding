@@ -8,7 +8,7 @@ import torch.optim as optim
 
 from model import Transformer
 from torch.optim import lr_scheduler
-from utils import data_generator, DataInfo, draw_plot
+from utils import data_generator, DataInfo, draw_plot, dataset_gen
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--num_epoch", type=int, default=300, help="number of epochs of training")
