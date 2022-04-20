@@ -24,14 +24,17 @@ parser.add_argument("--n_layers", type=int, default=6, help="the nums of layer")
 parser.add_argument("--fname", type=str, default="./model/300net.pth", help="the name of the model ")
 opt = parser.parse_args()
 
-#generate the dataset
-datainfo,src_vocab_size,tgt_vocab_size = dataset_gen()
+# generate the dataset
+seq_len = 5
+max_len = 12
+datainfo, src_vocab_size, tgt_vocab_size = dataset_gen(seq_len, max_len)
 
 # Define model
 model = Transformer(opt.n_heads, opt.d_model, opt.n_layers, src_vocab_size, tgt_vocab_size)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=opt.lr, betas=(0.9, 0.999))
 scheduler = lr_scheduler.MultiStepLR(optimizer, milestones=[opt.lr_scheduler_b], gamma=opt.lr_gamma)
+
 
 # Train
 for epoch in range(opt.num_epoch):
@@ -48,7 +51,7 @@ for epoch in range(opt.num_epoch):
 
     # plot
     if epoch == opt.epoch_plot:
-        draw_plot(outputs, code_int_c.view(-1), dec_enc_attns, seq)
+        draw_plot(outputs, code_int_c.view(-1), dec_enc_attns, seq, seq_len, max_len)
     print("Epoch:", "%04d" % (epoch + 1), "loss =", f"{loss}")
 
 # save the model
