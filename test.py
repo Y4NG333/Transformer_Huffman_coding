@@ -19,14 +19,15 @@ parser.add_argument("--sequence", type=str, default="abcab", help="length 5 sequ
 parser.add_argument("--fname", type=str, default="./model/300net.pth", help="the name of the model ")
 opt = parser.parse_args()
 
-#generate the dataset
-datainfo,src_vocab_size,tgt_vocab_size = dataset_gen()
+# generate the test dataset
+seq_len = 5
+max_len = 12
+datainfo, src_vocab_size, tgt_vocab_size = dataset_gen(seq_len, max_len)
 
 # Load model
 path_model = "./model/"
 model_test = Transformer(opt.n_heads, opt.d_model, opt.n_layers, src_vocab_size, tgt_vocab_size)
 model_test.load_state_dict(torch.load(opt.fname))
-
 criterion = nn.CrossEntropyLoss()
 
 seq, seq_int, code, code_int, code_onehot, code_int_c = data_generator(datainfo, opt.test_nums)
@@ -38,7 +39,7 @@ real_out = [torch.argmax(x).item() for x in outputs]
 
 loss = criterion(outputs, torch.LongTensor(code_int_c).view(-1))  # code_int.view(-1)
 print("loss =", f"{loss}")
-draw_plot(outputs, torch.LongTensor(code_int_c).view(-1), dec_enc_attns, seq)
+draw_plot(outputs, torch.LongTensor(code_int_c).view(-1), dec_enc_attns, seq, seq_len, max_len)
 
 
 def get_seq_int(sequence):
@@ -50,18 +51,16 @@ def get_seq_int(sequence):
     seq_chr_map = {c: i for i, c in enumerate(datainfo.alphabet)}
     seq_int = np.vectorize(seq_chr_map.get)(sentence_n)
     seq_int += 1
-    return seq_int,code_int[0]
+    return seq_int, code_int[0]
 
 
 def inference(sequence):
-    seq_int,label = get_seq_int(sequence)
+    seq_int, label = get_seq_int(sequence)
     print("input", seq_int)
-
     # encoder
     seq_int = torch.LongTensor(seq_int).view(1, 5)
     with torch.no_grad():
         enc_outputs, enc_self_attns = model_test.encoder(seq_int)
-
     # get dec_input
     dec_input = torch.zeros(1, 0).type_as(seq_int.data)
     next_symbol = 3
@@ -79,11 +78,12 @@ def inference(sequence):
     output = [n.item() for n in predict.squeeze()]
     output = np.array(output)
     print("output", output)
-    print("label",label)
+    print("label", label)
     if label.all() == output.all():
         print("correct")
     else:
         print("something wrong")
+
 
 print("translate_sentence")
 inference(opt.sequence)
