@@ -4,61 +4,86 @@ import numpy as np
 import os
 import torch
 import torch.nn as nn
-import torch.optim as optim
-import torch.utils.data as Data
 
-from matplotlib import pyplot as plt
 from model import Transformer
-from utils import data_generator, DataInfo, draw_plot
+from utils import data_generator, DataInfo, draw_plot, dataset_gen
+
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--test_nums", type=int, default=10, help="size of the test")
+parser.add_argument("--path_model", type=str, default="./model/300net.pth", help="the path of model")
+parser.add_argument("--test_nums", type=int, default=1, help="size of the test")
 parser.add_argument("--n_heads", type=int, default=8, help="the nums of attention")
-parser.add_argument("--d_model", type=int, default=512, help="the dimmension of vocab")
+parser.add_argument("--d_model", type=int, default=256, help="the dimmension of vocab")
 parser.add_argument("--n_layers", type=int, default=6, help="the nums of layer")
-parser.add_argument("--fname", type=str, default="./model/100net.pth", help="the name of the model ")
+parser.add_argument("--sequence", type=str, default="abcab", help="length 5 sequences ")
+parser.add_argument("--fname", type=str, default="./model/300net.pth", help="the name of the model ")
 opt = parser.parse_args()
 
-# Used to configure the environment
-os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
-
-alphabet = ["a", "b", "c"]
-weight = np.array([2, 1, 1])
-prob = weight / np.sum(weight)
-
+# generate the test dataset
 seq_len = 5
 max_len = 12
-pad_symbol = "2"
-dimension = 3
-src_vocab_size = len(alphabet)
-tgt_vocab_size = 3
-
-weighted_tuple = [(alphabet[i], weight[i]) for i in range(len(alphabet))]
-codebook = huffman.codebook(weighted_tuple)
-
-datainfo = DataInfo(
-    alphabet=alphabet,
-    prob=prob,
-    codebook=codebook,
-    seq_len=seq_len,
-    max_len=max_len,
-    pad_symbol=pad_symbol,
-)
-criterion = nn.MSELoss()
+datainfo, src_vocab_size, tgt_vocab_size = dataset_gen(seq_len, max_len)
 
 # Load model
 path_model = "./model/"
 model_test = Transformer(opt.n_heads, opt.d_model, opt.n_layers, src_vocab_size, tgt_vocab_size)
 model_test.load_state_dict(torch.load(opt.fname))
+criterion = nn.CrossEntropyLoss()
 
-# Generate test set
-seq, seq_int, code, code_int, code_onehot = data_generator(datainfo, opt.test_nums)
+seq, seq_int, code, code_int, code_onehot, code_int_c = data_generator(datainfo, opt.test_nums)
 seq_int = torch.LongTensor(seq_int)
 code_int = torch.LongTensor(code_int)
+
 outputs, enc_self_attns, dec_self_attns, dec_enc_attns = model_test(seq_int, code_int)
 real_out = [torch.argmax(x).item() for x in outputs]
 
-print("real out", np.array(real_out).reshape(-1, max_len))
-print("code int", code_int)
-loss = criterion(outputs.float(), torch.LongTensor(code_onehot).view(-1, dimension).float())
+loss = criterion(outputs, torch.LongTensor(code_int_c).view(-1))  # code_int.view(-1)
 print("loss =", f"{loss}")
+draw_plot(outputs, torch.LongTensor(code_int_c).view(-1), dec_enc_attns, seq, seq_len, max_len)
+
+
+def get_seq_int(sequence):
+    sentence_n = [[item for item in sequence]]
+    code_symbolwise = np.vectorize(datainfo.codebook.__getitem__)(sentence_n)
+    code_merged = [list("".join(s_arr).ljust(datainfo.max_len, datainfo.pad_symbol)) for s_arr in code_symbolwise]
+    code = np.array(code_merged)
+    code_int = code.astype(int)
+    seq_chr_map = {c: i for i, c in enumerate(datainfo.alphabet)}
+    seq_int = np.vectorize(seq_chr_map.get)(sentence_n)
+    seq_int += 1
+    return seq_int, code_int[0]
+
+
+def inference(sequence):
+    seq_int, label = get_seq_int(sequence)
+    print("input", seq_int)
+    # encoder
+    seq_int = torch.LongTensor(seq_int).view(1, 5)
+    with torch.no_grad():
+        enc_outputs, enc_self_attns = model_test.encoder(seq_int)
+    # get dec_input
+    dec_input = torch.zeros(1, 0).type_as(seq_int.data)
+    next_symbol = 3
+    for i in range(datainfo.max_len):
+        dec_input = torch.cat([dec_input.detach(), torch.tensor([[next_symbol]])], -1)
+        dec_outputs, dec_self_attns, dec_enc_attns = model_test.decoder(dec_input, seq_int, enc_outputs)
+        projected = model_test.projection(dec_outputs)
+        prob = projected.squeeze(0).max(dim=-1, keepdim=False)[1]
+        next_word = prob.data[-1]
+        next_symbol = next_word
+
+    # output
+    predict, _, _, _ = model_test(seq_int, dec_input)
+    predict = predict.data.max(1, keepdim=True)[1]
+    output = [n.item() for n in predict.squeeze()]
+    output = np.array(output)
+    print("output", output)
+    print("label", label)
+    if label.all() == output.all():
+        print("correct")
+    else:
+        print("something wrong")
+
+
+print("translate_sentence")
+inference(opt.sequence)

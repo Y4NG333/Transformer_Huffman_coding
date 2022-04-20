@@ -1,8 +1,10 @@
-from dataclasses import dataclass
+import torch
+import huffman
 import numpy as np
 import torch.utils.data as Data
-import torch
+
 from matplotlib import pyplot as plt
+from dataclasses import dataclass
 
 
 @dataclass
@@ -44,32 +46,65 @@ def data_generator(datainfo, batch_num):
     # [0 0 1 1 1 0 0 2 2 2 2 2]
     code_int = code.astype(int)
 
+    code_int_b = []
+    for item in code_int:
+        cur = [3]
+        for i in range(len(item) - 1):
+            cur.append(item[i])
+        code_int_b.append(cur)
+    code_int_b = np.array(code_int_b)
+
     # generate onehot (currently not needed)
-    code_onehot = np.zeros((code.shape[0], code.shape[1], 3))  # assuming binary code (with padding)
+    code_onehot = np.zeros((code.shape[0], code.shape[1], 4))
     idx_code, idx_bin = np.meshgrid(np.arange(code.shape[0]), np.arange(code.shape[1]))
     code_onehot[idx_code, idx_bin, code_int.T] = 1
-    # code_onehot = code_onehot.reshape(600,3)
 
-    return seq, seq_int, code, code_int, code_onehot
+    seq_int += 1
+
+    return seq, seq_int, code, code_int_b, code_onehot, code_int
+
+
+# generate the dataset
+def dataset_gen(seq_len, max_len):
+    alphabet = ["a", "b", "c"]
+    weight = np.array([2, 1, 1])
+    prob = weight / np.sum(weight)
+    pad_symbol = "0"
+    tgt_vocab_size = 4
+    src_vocab_size = len(alphabet) + 1
+    weighted_tuple = [(alphabet[i], weight[i]) for i in range(len(alphabet))]
+    codebook = huffman.codebook(weighted_tuple)
+
+    for item in codebook:
+        codebook[item] = codebook[item].replace("0", "2")
+
+    datainfo = DataInfo(
+        alphabet=alphabet,
+        prob=prob,
+        codebook=codebook,
+        seq_len=seq_len,
+        max_len=max_len,
+        pad_symbol=pad_symbol,
+    )
+    return datainfo, src_vocab_size, tgt_vocab_size
+
+
+def replace(inputs):
+    replace_dict = {2: 0, 0: 2, 1: 1}
+    outputs = np.vectorize(replace_dict.get)(inputs)
+    return outputs
 
 
 # Plotting tool
-def draw_plot(outputs, labels, dec_enc_attns, seq):
+def draw_plot(outputs, labels, dec_enc_attns, seq, seq_len, max_len):
     real_out = [torch.argmax(x).item() for x in outputs]
+    real_out = replace(real_out)
+    label = replace([labels[x].item() for x in range(0, max_len)])
     attn = dec_enc_attns[5][0][7].detach().numpy()
     attn = list(map(list, zip(*attn)))
 
     plt.figure(figsize=(10, 10.5))
-    plt.xticks([i for i in range(12)], [real_out[i] for i in range(len(real_out))])
-    plt.yticks([i for i in range(5)], [seq[0][i] for i in range(len(seq[0]))])
+    plt.xticks([i for i in range(max_len)], [real_out[i] for i in range(len(real_out))])
+    plt.yticks([i for i in range(seq_len)], [seq[0][i] for i in range(len(seq[0]))])
     plt.imshow(attn)
-    plt.show()
-
-    plt.figure(figsize=(10, 10.5))
-    plt.yticks([i for i in range(3)], [0, 1, 2])
-    plt.xticks([i for i in range(12)], [real_out[i] for i in range(len(real_out))])
-    tu = outputs[0:12].detach().numpy()
-    tu += 1
-    tu = list(map(list, zip(*tu)))
-    plt.imshow(tu)
     plt.show()
