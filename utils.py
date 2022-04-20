@@ -6,6 +6,7 @@ import torch.utils.data as Data
 from matplotlib import pyplot as plt
 from dataclasses import dataclass
 
+
 @dataclass
 class DataInfo:
     alphabet: list
@@ -59,23 +60,24 @@ def data_generator(datainfo, batch_num):
     code_onehot[idx_code, idx_bin, code_int.T] = 1
 
     seq_int += 1
+
     return seq, seq_int, code, code_int_b, code_onehot, code_int
 
-def dataset_gen():
+
+# generate the dataset
+def dataset_gen(seq_len, max_len):
     alphabet = ["a", "b", "c"]
     weight = np.array([2, 1, 1])
     prob = weight / np.sum(weight)
     pad_symbol = "0"
-    seq_len = 5
-    max_len = 12
     tgt_vocab_size = 4
     src_vocab_size = len(alphabet) + 1
     weighted_tuple = [(alphabet[i], weight[i]) for i in range(len(alphabet))]
     codebook = huffman.codebook(weighted_tuple)
-    
+
     for item in codebook:
         codebook[item] = codebook[item].replace("0", "2")
-    
+
     datainfo = DataInfo(
         alphabet=alphabet,
         prob=prob,
@@ -84,7 +86,7 @@ def dataset_gen():
         max_len=max_len,
         pad_symbol=pad_symbol,
     )
-    return datainfo,src_vocab_size,tgt_vocab_size
+    return datainfo, src_vocab_size, tgt_vocab_size
 
 
 def replace(inputs):
@@ -92,10 +94,9 @@ def replace(inputs):
     outputs = np.vectorize(replace_dict.get)(inputs)
     return outputs
 
+
 # Plotting tool
-def draw_plot(outputs, labels, dec_enc_attns, seq):
-    seq_len = 5
-    max_len = 12
+def draw_plot(outputs, labels, dec_enc_attns, seq, seq_len, max_len):
     real_out = [torch.argmax(x).item() for x in outputs]
     real_out = replace(real_out)
     label = replace([labels[x].item() for x in range(0, max_len)])
@@ -107,4 +108,3 @@ def draw_plot(outputs, labels, dec_enc_attns, seq):
     plt.yticks([i for i in range(seq_len)], [seq[0][i] for i in range(len(seq[0]))])
     plt.imshow(attn)
     plt.show()
-
