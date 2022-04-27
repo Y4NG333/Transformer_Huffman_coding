@@ -74,7 +74,7 @@ def inference(sequence):
         predict, _, _, _ = model_test(seq_int, dec_input)
         predict = predict.data.max(1, keepdim=True)[1]
         output = [n.item() for n in predict.squeeze()]
-        output = np.array(output).reshape(-1, 22)
+        output = np.array(output).reshape(-1, max_len)
         result = [(label[i] == output[i]).all() for i in range(opt.batch_inference)]
         sequence_correct += sum(result)
         sequence_all += len(result)
