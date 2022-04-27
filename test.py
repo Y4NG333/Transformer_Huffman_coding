@@ -15,74 +15,72 @@ parser.add_argument("--test_nums", type=int, default=1, help="size of the test")
 parser.add_argument("--n_heads", type=int, default=8, help="the nums of attention")
 parser.add_argument("--d_model", type=int, default=256, help="the dimmension of vocab")
 parser.add_argument("--n_layers", type=int, default=6, help="the nums of layer")
-parser.add_argument("--sequence", type=str, default="abcab", help="length 5 sequences ")
+parser.add_argument("--sequence", type=str, default=10000, help="nums of sequences ")
+parser.add_argument("--batch_inference", type=int, default=100, help="the nums of the inference ")
 parser.add_argument("--fname", type=str, default="./model/300net.pth", help="the name of the model ")
+
 opt = parser.parse_args()
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 # generate the test dataset
-seq_len = 5
-max_len = 12
+seq_len = 10
+max_len = 22
 datainfo, src_vocab_size, tgt_vocab_size = dataset_gen(seq_len, max_len)
 
 # Load model
 path_model = "./model/"
-model_test = Transformer(opt.n_heads, opt.d_model, opt.n_layers, src_vocab_size, tgt_vocab_size)
+model_test = Transformer(opt.n_heads, opt.d_model, opt.n_layers, src_vocab_size, tgt_vocab_size).to(device)
 model_test.load_state_dict(torch.load(opt.fname))
+
 criterion = nn.CrossEntropyLoss()
 
 seq, seq_int, code, code_int, code_onehot, code_int_c = data_generator(datainfo, opt.test_nums)
-seq_int = torch.LongTensor(seq_int)
-code_int = torch.LongTensor(code_int)
+seq_int = torch.LongTensor(seq_int).to(device)
+code_int = torch.LongTensor(code_int).to(device)
 
 outputs, enc_self_attns, dec_self_attns, dec_enc_attns = model_test(seq_int, code_int)
 real_out = [torch.argmax(x).item() for x in outputs]
 
-loss = criterion(outputs, torch.LongTensor(code_int_c).view(-1))  # code_int.view(-1)
+loss = criterion(outputs, torch.LongTensor(code_int_c).to(device).view(-1))  # code_int.view(-1)
 print("loss =", f"{loss}")
 draw_plot(outputs, torch.LongTensor(code_int_c).view(-1), dec_enc_attns, seq, seq_len, max_len)
 
 
-def get_seq_int(sequence):
-    sentence_n = [[item for item in sequence]]
-    code_symbolwise = np.vectorize(datainfo.codebook.__getitem__)(sentence_n)
-    code_merged = [list("".join(s_arr).ljust(datainfo.max_len, datainfo.pad_symbol)) for s_arr in code_symbolwise]
-    code = np.array(code_merged)
-    code_int = code.astype(int)
-    seq_chr_map = {c: i for i, c in enumerate(datainfo.alphabet)}
-    seq_int = np.vectorize(seq_chr_map.get)(sentence_n)
-    seq_int += 1
-    return seq_int, code_int[0]
-
-
 def inference(sequence):
-    seq_int, label = get_seq_int(sequence)
-    print("input", seq_int)
-    # encoder
-    seq_int = torch.LongTensor(seq_int).view(1, 5)
-    with torch.no_grad():
-        enc_outputs, enc_self_attns = model_test.encoder(seq_int)
-    # get dec_input
-    dec_input = torch.zeros(1, 0).type_as(seq_int.data)
-    next_symbol = 3
-    for i in range(datainfo.max_len):
-        dec_input = torch.cat([dec_input.detach(), torch.tensor([[next_symbol]])], -1)
-        dec_outputs, dec_self_attns, dec_enc_attns = model_test.decoder(dec_input, seq_int, enc_outputs)
-        projected = model_test.projection(dec_outputs)
-        prob = projected.squeeze(0).max(dim=-1, keepdim=False)[1]
-        next_word = prob.data[-1]
-        next_symbol = next_word
+    sequence_correct = 0
+    sequence_all = 0
 
-    # output
-    predict, _, _, _ = model_test(seq_int, dec_input)
-    predict = predict.data.max(1, keepdim=True)[1]
-    output = [n.item() for n in predict.squeeze()]
-    output = np.array(output)
-    print("output", output)
-    print("label", label)
-    if label.all() == output.all():
-        print("correct")
-    else:
-        print("something wrong")
+    for j in range(int(sequence / opt.batch_inference)):
+        # seq_int, label = get_seq_int(sequence)
+        seq, seq_int, code, code_int, code_onehot, label = data_generator(datainfo, opt.batch_inference)
+
+        # encoder
+        seq_int = torch.LongTensor(seq_int).to(device)
+        with torch.no_grad():
+            enc_outputs, enc_self_attns = model_test.encoder(seq_int)
+        # get dec_input
+        dec_input = torch.zeros(opt.batch_inference, 0).type_as(seq_int.data).to(device)
+        next_symbol = torch.tensor([[3] for i in range(opt.batch_inference)])
+        for i in range(datainfo.max_len):
+            dec_input = torch.cat([dec_input.detach(), next_symbol.to(device)], -1)
+            dec_outputs, dec_self_attns, dec_enc_attns = model_test.decoder(dec_input, seq_int, enc_outputs)
+            projected = model_test.projection(dec_outputs)
+            prob = projected.squeeze(0).max(dim=-1, keepdim=False)[1]
+            prob = prob[:, -1].resize(opt.batch_inference, 1)
+            next_word = prob.data
+            next_symbol = next_word
+
+        # output
+        predict, _, _, _ = model_test(seq_int, dec_input)
+        predict = predict.data.max(1, keepdim=True)[1]
+        output = [n.item() for n in predict.squeeze()]
+        output = np.array(output).reshape(-1, max_len)
+        result = [(label[i] == output[i]).all() for i in range(opt.batch_inference)]
+        sequence_correct += sum(result)
+        sequence_all += len(result)
+        print(j, sum(result) / len(result))
+
+    print("accuracy", sequence_correct / sequence_all)
 
 
 print("translate_sentence")
