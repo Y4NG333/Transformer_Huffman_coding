@@ -11,12 +11,12 @@ from torch.optim import lr_scheduler
 from utils import data_generator, DataInfo, draw_plot, dataset_gen
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--num_epoch", type=int, default=300, help="number of epochs of training")
+parser.add_argument("--num_epoch", type=int, default=901, help="number of epochs of training")
 parser.add_argument("--batch_num", type=int, default=50, help="size of the batches")
 parser.add_argument("--lr", type=float, default=0.0001, help="sgd: learning rate")
 parser.add_argument("--momentum", type=float, default=0.99, help="sgd: momentum")
-parser.add_argument("--epoch_plot", type=int, default=280, help="the epoch of plotting")
-parser.add_argument("--lr_scheduler_b", type=int, default=200, help="the epoch of lr_scheduler")
+parser.add_argument("--epoch_plot", type=int, default=900, help="the epoch of plotting")
+parser.add_argument("--lr_scheduler_b", type=int, default=700, help="the epoch of lr_scheduler")
 parser.add_argument("--lr_gamma", type=float, default=0.1, help="the gamma of lr_scheduler")
 parser.add_argument("--n_heads", type=int, default=8, help="the nums of attention")
 parser.add_argument("--d_model", type=int, default=256, help="the dimmension of vocab")
@@ -24,13 +24,15 @@ parser.add_argument("--n_layers", type=int, default=6, help="the nums of layer")
 parser.add_argument("--fname", type=str, default="./model/300net.pth", help="the name of the model ")
 opt = parser.parse_args()
 
+# Device configuration
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # generate the dataset
-seq_len = 5
-max_len = 12
+seq_len = 10
+max_len = 22
 datainfo, src_vocab_size, tgt_vocab_size = dataset_gen(seq_len, max_len)
 
 # Define model
-model = Transformer(opt.n_heads, opt.d_model, opt.n_layers, src_vocab_size, tgt_vocab_size)
+model = Transformer(opt.n_heads, opt.d_model, opt.n_layers, src_vocab_size, tgt_vocab_size).to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=opt.lr, betas=(0.9, 0.999))
 scheduler = lr_scheduler.MultiStepLR(optimizer, milestones=[opt.lr_scheduler_b], gamma=opt.lr_gamma)
@@ -39,9 +41,9 @@ scheduler = lr_scheduler.MultiStepLR(optimizer, milestones=[opt.lr_scheduler_b],
 # Train
 for epoch in range(opt.num_epoch):
     seq, seq_int, code, code_int, code_onehot, code_int_c = data_generator(datainfo, opt.batch_num)
-    seq_int = torch.LongTensor(seq_int)
-    code_int = torch.LongTensor(code_int)
-    code_int_c = torch.LongTensor(code_int_c)
+    seq_int = torch.LongTensor(seq_int).to(device)
+    code_int = torch.LongTensor(code_int).to(device)
+    code_int_c = torch.LongTensor(code_int_c).to(device)
     optimizer.zero_grad()
     outputs, enc_self_attns, dec_self_attns, dec_enc_attns = model(seq_int, code_int)
     loss = criterion(outputs, code_int_c.view(-1))
@@ -51,7 +53,7 @@ for epoch in range(opt.num_epoch):
 
     # plot
     if epoch == opt.epoch_plot:
-        draw_plot(outputs, code_int_c.view(-1), dec_enc_attns, seq, seq_len, max_len)
+        draw_plot(outputs, code_int_c.cpu().view(-1), dec_enc_attns, seq, seq_len, max_len)
     print("Epoch:", "%04d" % (epoch + 1), "loss =", f"{loss}")
 
 # save the model
