@@ -3,8 +3,8 @@ import huffman
 import numpy as np
 import torch.utils.data as Data
 
-from matplotlib import pyplot as plt
 from dataclasses import dataclass
+from matplotlib import pyplot as plt
 
 
 @dataclass
@@ -100,10 +100,11 @@ def draw_plot(outputs, labels, dec_enc_attns, seq, seq_len, max_len):
     real_out = [torch.argmax(x).item() for x in outputs]
     real_out = replace(real_out)
     label = replace([labels[x].item() for x in range(0, max_len)])
-    attn = dec_enc_attns[5][0][7].detach().numpy()
+    real_out = real_out[0:max_len]
+    attn = dec_enc_attns[5][0][7].cpu().detach().numpy()
     attn = list(map(list, zip(*attn)))
 
-    plt.figure(figsize=(10, 10.5))
+    plt.figure(figsize=(15, 15))
     plt.xticks([i for i in range(max_len)], [real_out[i] for i in range(len(real_out))])
     plt.yticks([i for i in range(seq_len)], [seq[0][i] for i in range(len(seq[0]))])
     plt.imshow(attn)
