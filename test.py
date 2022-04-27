@@ -17,27 +17,29 @@ parser.add_argument("--d_model", type=int, default=256, help="the dimmension of 
 parser.add_argument("--n_layers", type=int, default=6, help="the nums of layer")
 parser.add_argument("--sequence", type=str, default="abcab", help="length 5 sequences ")
 parser.add_argument("--fname", type=str, default="./model/300net.pth", help="the name of the model ")
+
 opt = parser.parse_args()
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 # generate the test dataset
-seq_len = 5
-max_len = 12
+seq_len = 10
+max_len = 22
 datainfo, src_vocab_size, tgt_vocab_size = dataset_gen(seq_len, max_len)
 
 # Load model
 path_model = "./model/"
-model_test = Transformer(opt.n_heads, opt.d_model, opt.n_layers, src_vocab_size, tgt_vocab_size)
+model_test = Transformer(opt.n_heads, opt.d_model, opt.n_layers, src_vocab_size, tgt_vocab_size).to(device)
 model_test.load_state_dict(torch.load(opt.fname))
 criterion = nn.CrossEntropyLoss()
 
 seq, seq_int, code, code_int, code_onehot, code_int_c = data_generator(datainfo, opt.test_nums)
-seq_int = torch.LongTensor(seq_int)
-code_int = torch.LongTensor(code_int)
+seq_int = torch.LongTensor(seq_int).to(device)
+code_int = torch.LongTensor(code_int).to(device)
 
 outputs, enc_self_attns, dec_self_attns, dec_enc_attns = model_test(seq_int, code_int)
 real_out = [torch.argmax(x).item() for x in outputs]
 
-loss = criterion(outputs, torch.LongTensor(code_int_c).view(-1))  # code_int.view(-1)
+loss = criterion(outputs, torch.LongTensor(code_int_c).to(device).view(-1))  # code_int.view(-1)
 print("loss =", f"{loss}")
 draw_plot(outputs, torch.LongTensor(code_int_c).view(-1), dec_enc_attns, seq, seq_len, max_len)
 
