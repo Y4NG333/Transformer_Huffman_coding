@@ -15,7 +15,8 @@ parser.add_argument("--test_nums", type=int, default=1, help="size of the test")
 parser.add_argument("--n_heads", type=int, default=8, help="the nums of attention")
 parser.add_argument("--d_model", type=int, default=256, help="the dimmension of vocab")
 parser.add_argument("--n_layers", type=int, default=6, help="the nums of layer")
-parser.add_argument("--sequence", type=str, default="abcab", help="length 5 sequences ")
+parser.add_argument("--sequence", type=str, default=10000, help="nums of sequences ")
+parser.add_argument("--batch_inference", type=int, default=100, help="the nums of the inference ")
 parser.add_argument("--fname", type=str, default="./model/300net.pth", help="the name of the model ")
 
 opt = parser.parse_args()
@@ -30,6 +31,7 @@ datainfo, src_vocab_size, tgt_vocab_size = dataset_gen(seq_len, max_len)
 path_model = "./model/"
 model_test = Transformer(opt.n_heads, opt.d_model, opt.n_layers, src_vocab_size, tgt_vocab_size).to(device)
 model_test.load_state_dict(torch.load(opt.fname))
+
 criterion = nn.CrossEntropyLoss()
 
 seq, seq_int, code, code_int, code_onehot, code_int_c = data_generator(datainfo, opt.test_nums)
@@ -42,18 +44,6 @@ real_out = [torch.argmax(x).item() for x in outputs]
 loss = criterion(outputs, torch.LongTensor(code_int_c).to(device).view(-1))  # code_int.view(-1)
 print("loss =", f"{loss}")
 draw_plot(outputs, torch.LongTensor(code_int_c).view(-1), dec_enc_attns, seq, seq_len, max_len)
-
-
-def get_seq_int(sequence):
-    sentence_n = [[item for item in sequence]]
-    code_symbolwise = np.vectorize(datainfo.codebook.__getitem__)(sentence_n)
-    code_merged = [list("".join(s_arr).ljust(datainfo.max_len, datainfo.pad_symbol)) for s_arr in code_symbolwise]
-    code = np.array(code_merged)
-    code_int = code.astype(int)
-    seq_chr_map = {c: i for i, c in enumerate(datainfo.alphabet)}
-    seq_int = np.vectorize(seq_chr_map.get)(sentence_n)
-    seq_int += 1
-    return seq_int, code_int[0]
 
 
 def inference(sequence):
