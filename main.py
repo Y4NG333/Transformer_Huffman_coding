@@ -11,12 +11,12 @@ from torch.optim import lr_scheduler
 from utils import data_generator, DataInfo, draw_plot, dataset_gen
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--num_epoch", type=int, default=901, help="number of epochs of training")
+parser.add_argument("--num_epoch", type=int, default=1801, help="number of epochs of training")
 parser.add_argument("--batch_num", type=int, default=50, help="size of the batches")
 parser.add_argument("--lr", type=float, default=0.0001, help="sgd: learning rate")
 parser.add_argument("--momentum", type=float, default=0.99, help="sgd: momentum")
-parser.add_argument("--epoch_plot", type=int, default=900, help="the epoch of plotting")
-parser.add_argument("--lr_scheduler_b", type=int, default=700, help="the epoch of lr_scheduler")
+parser.add_argument("--epoch_plot", type=int, default=1800, help="the epoch of plotting")
+parser.add_argument("--lr_scheduler_b", type=int, default=1400, help="the epoch of lr_scheduler")
 parser.add_argument("--lr_gamma", type=float, default=0.1, help="the gamma of lr_scheduler")
 parser.add_argument("--n_heads", type=int, default=8, help="the nums of attention")
 parser.add_argument("--d_model", type=int, default=256, help="the dimmension of vocab")
@@ -26,10 +26,12 @@ opt = parser.parse_args()
 
 # Device configuration
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 # generate the dataset
-seq_len = 10
-max_len = 22
-datainfo, src_vocab_size, tgt_vocab_size = dataset_gen(seq_len, max_len)
+seq_len = 20
+alphabet = ["a", "b", "c", "d", "e", "f", "g", "h"]
+weight = np.array([2, 1, 1, 1, 1, 1, 1, 1])
+datainfo, src_vocab_size, tgt_vocab_size, max_len = dataset_gen(seq_len, alphabet, weight)
 
 # Define model
 model = Transformer(opt.n_heads, opt.d_model, opt.n_layers, src_vocab_size, tgt_vocab_size).to(device)
