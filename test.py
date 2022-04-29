@@ -23,10 +23,10 @@ opt = parser.parse_args()
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 # generate the test dataset
-seq_len = 10
-max_len = 22
-datainfo, src_vocab_size, tgt_vocab_size = dataset_gen(seq_len, max_len)
-
+seq_len = 20
+alphabet = ["a", "b", "c", "d", "e", "f", "g", "h"]
+weight = np.array([2, 1, 1, 1, 1, 1, 1, 1])
+datainfo, src_vocab_size, tgt_vocab_size, max_len = dataset_gen(seq_len, alphabet, weight)
 # Load model
 path_model = "./model/"
 model_test = Transformer(opt.n_heads, opt.d_model, opt.n_layers, src_vocab_size, tgt_vocab_size).to(device)
@@ -49,6 +49,7 @@ draw_plot(outputs, torch.LongTensor(code_int_c).view(-1), dec_enc_attns, seq, se
 def inference(sequence):
     sequence_correct = 0
     sequence_all = 0
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     for j in range(int(sequence / opt.batch_inference)):
         # seq_int, label = get_seq_int(sequence)
