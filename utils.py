@@ -65,19 +65,18 @@ def data_generator(datainfo, batch_num):
 
 
 # generate the dataset
-def dataset_gen(seq_len, max_len):
-    alphabet = ["a", "b", "c"]
-    weight = np.array([2, 1, 1])
+def dataset_gen(seq_len, alphabet, weight):
     prob = weight / np.sum(weight)
     pad_symbol = "0"
     tgt_vocab_size = 4
     src_vocab_size = len(alphabet) + 1
     weighted_tuple = [(alphabet[i], weight[i]) for i in range(len(alphabet))]
     codebook = huffman.codebook(weighted_tuple)
-
+    max_len = 0
     for item in codebook:
         codebook[item] = codebook[item].replace("0", "2")
-
+        max_len = max(max_len, len(codebook[item]))
+    max_len = max_len * seq_len + 2
     datainfo = DataInfo(
         alphabet=alphabet,
         prob=prob,
@@ -86,7 +85,7 @@ def dataset_gen(seq_len, max_len):
         max_len=max_len,
         pad_symbol=pad_symbol,
     )
-    return datainfo, src_vocab_size, tgt_vocab_size
+    return datainfo, src_vocab_size, tgt_vocab_size, max_len
 
 
 def replace(inputs):
