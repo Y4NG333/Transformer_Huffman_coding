@@ -72,7 +72,6 @@ def dataset_gen(seq_len, alphabet, weight):
     src_vocab_size = len(alphabet) + 1
     weighted_tuple = [(alphabet[i], weight[i]) for i in range(len(alphabet))]
     codebook = huffman.codebook(weighted_tuple)
-    print(codebook)
     max_len = 0
     for item in codebook:
         codebook[item] = codebook[item].replace("0", "2")
