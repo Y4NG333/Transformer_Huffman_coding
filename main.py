@@ -55,7 +55,7 @@ for epoch in range(opt.num_epoch):
 
     # plot
     if epoch == opt.epoch_plot:
-        draw_plot(outputs, code_int_c.cpu().view(-1), dec_enc_attns, seq, seq_len, max_len)
+        draw_plot(outputs, code_int_c.cpu().view(-1), dec_enc_attns, seq, seq_len, max_len, datainfo.codebook)
     print("Epoch:", "%04d" % (epoch + 1), "loss =", f"{loss}")
 
 # save the model
