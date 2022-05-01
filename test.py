@@ -43,7 +43,7 @@ real_out = [torch.argmax(x).item() for x in outputs]
 
 loss = criterion(outputs, torch.LongTensor(code_int_c).to(device).view(-1))  # code_int.view(-1)
 print("loss =", f"{loss}")
-draw_plot(outputs, torch.LongTensor(code_int_c).view(-1), dec_enc_attns, seq, seq_len, max_len)
+draw_plot(outputs, torch.LongTensor(code_int_c).view(-1), dec_enc_attns, seq, seq_len, max_len, datainfo.codebook)
 
 
 def inference(sequence):
