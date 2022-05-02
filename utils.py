@@ -107,6 +107,7 @@ def draw_plot(outputs, labels, dec_enc_attns, seq, seq_len, max_len, codebook):
     plt.xticks([i for i in range(max_len)], [real_out[i] for i in range(len(real_out))])
     plt.yticks([i for i in range(seq_len)], [seq[0][i] for i in range(len(seq[0]))])
     plt.imshow(attn)
+    plt.savefig("./output_attention.png")
     plt.show()
 
     attn_standard = np.zeros((len(seq[0]), len(label)))
@@ -120,4 +121,5 @@ def draw_plot(outputs, labels, dec_enc_attns, seq, seq_len, max_len, codebook):
     plt.yticks([i for i in range(seq_len)], [seq[0][i] for i in range(len(seq[0]))])
     plt.title("standard_attention_map")
     plt.imshow(attn_standard)
+    plt.savefig("./standard_attention.png")
     plt.show()
