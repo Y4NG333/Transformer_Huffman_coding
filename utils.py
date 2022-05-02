@@ -95,7 +95,7 @@ def replace(inputs):
 
 
 # Plotting tool
-def draw_plot(outputs, labels, dec_enc_attns, seq, seq_len, max_len, codebook):
+def draw_plot(outputs, labels, dec_enc_attns, seq, seq_len, max_len, codebook, name):
     real_out = [torch.argmax(x).item() for x in outputs]
     real_out = replace(real_out)
     label = replace([labels[x].item() for x in range(0, max_len)])
@@ -107,7 +107,7 @@ def draw_plot(outputs, labels, dec_enc_attns, seq, seq_len, max_len, codebook):
     plt.xticks([i for i in range(max_len)], [real_out[i] for i in range(len(real_out))])
     plt.yticks([i for i in range(seq_len)], [seq[0][i] for i in range(len(seq[0]))])
     plt.imshow(attn)
-    plt.savefig("./output_attention.png")
+    plt.savefig("./output_" + name + ".png")
     plt.show()
 
     attn_standard = np.zeros((len(seq[0]), len(label)))
@@ -121,5 +121,5 @@ def draw_plot(outputs, labels, dec_enc_attns, seq, seq_len, max_len, codebook):
     plt.yticks([i for i in range(seq_len)], [seq[0][i] for i in range(len(seq[0]))])
     plt.title("standard_attention_map")
     plt.imshow(attn_standard)
-    plt.savefig("./standard_attention.png")
+    plt.savefig("./standard_" + name + ".png")
     plt.show()
