@@ -1,3 +1,4 @@
+import os
 import torch
 import huffman
 import numpy as np
@@ -106,8 +107,9 @@ def draw_plot(outputs, labels, dec_enc_attns, seq, seq_len, max_len, codebook, n
     plt.figure(figsize=(15, 15))
     plt.xticks([i for i in range(max_len)], [real_out[i] for i in range(len(real_out))])
     plt.yticks([i for i in range(seq_len)], [seq[0][i] for i in range(len(seq[0]))])
+    plt.title("output_attention_map")
     plt.imshow(attn)
-    plt.savefig("./output_" + name + ".png")
+    plt.savefig("./output" + name + ".png")
     plt.show()
 
     attn_standard = np.zeros((len(seq[0]), len(label)))
@@ -121,5 +123,40 @@ def draw_plot(outputs, labels, dec_enc_attns, seq, seq_len, max_len, codebook, n
     plt.yticks([i for i in range(seq_len)], [seq[0][i] for i in range(len(seq[0]))])
     plt.title("standard_attention_map")
     plt.imshow(attn_standard)
-    plt.savefig("./standard_" + name + ".png")
+    plt.savefig("./standard" + name + ".png")
     plt.show()
+
+
+def draw_plot_test(outputs, labels, dec_enc_attns, seq, seq_len, max_len, codebook, batch):
+    real_outs = replace([outputs[x].item() for x in range(0, len(outputs))])
+    labels = replace([labels[x].item() for x in range(0, len(labels))])
+    if not os.path.exists("./images/"):
+        os.makedirs("./images/")
+    for k in range(batch):
+        real_out = real_outs[k * max_len : (k + 1) * max_len]
+        label = labels[k * max_len : (k + 1) * max_len]
+        name = str(k).zfill(4)
+        attn = dec_enc_attns[5][k][7].cpu().detach().numpy()
+        attn = list(map(list, zip(*attn)))
+
+        plt.figure(figsize=(15, 15))
+        plt.xticks([i for i in range(max_len)], [real_out[i] for i in range(max_len)])
+        plt.yticks([i for i in range(seq_len)], [seq[k][i] for i in range(seq_len)])
+        plt.title(name + "_output_attention_map")
+        plt.imshow(attn)
+        plt.savefig("./images/" + name + "_output.png")
+        plt.show()
+
+        attn_standard = np.zeros((seq_len, max_len))
+        order = 0
+        for i in range(len(seq[0])):
+            for j in range(len(codebook[seq[k][i]])):
+                attn_standard[i][order] = 1
+                order += 1
+        plt.figure(figsize=(15, 15))
+        plt.xticks([i for i in range(max_len)], [label[i] for i in range(max_len)])
+        plt.yticks([i for i in range(seq_len)], [seq[k][i] for i in range(seq_len)])
+        plt.title(name + "_standard_attention_map")
+        plt.imshow(attn_standard)
+        plt.savefig("./images/" + name + "_standard.png")
+        plt.show()
