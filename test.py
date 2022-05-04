@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 
 from model import Transformer
-from utils import data_generator, DataInfo, draw_plot, dataset_gen
+from utils import data_generator, DataInfo, draw_plot, dataset_gen, draw_plot_test
 
 
 parser = argparse.ArgumentParser()
@@ -43,7 +43,16 @@ real_out = [torch.argmax(x).item() for x in outputs]
 
 loss = criterion(outputs, torch.LongTensor(code_int_c).to(device).view(-1))  # code_int.view(-1)
 print("loss =", f"{loss}")
-draw_plot(outputs, torch.LongTensor(code_int_c).view(-1), dec_enc_attns, seq, seq_len, max_len, datainfo.codebook, "attention2")
+draw_plot(
+    outputs,
+    torch.LongTensor(code_int_c).view(-1),
+    dec_enc_attns,
+    seq,
+    seq_len,
+    max_len,
+    datainfo.codebook,
+    "attention2",
+)
 
 
 def inference(sequence):
@@ -72,7 +81,7 @@ def inference(sequence):
             next_symbol = next_word
 
         # output
-        predict, _, _, _ = model_test(seq_int, dec_input)
+        predict, _, _, dec_enc_attns = model_test(seq_int, dec_input)
         predict = predict.data.max(1, keepdim=True)[1]
         output = [n.item() for n in predict.squeeze()]
         output = np.array(output).reshape(-1, max_len)
@@ -80,6 +89,17 @@ def inference(sequence):
         sequence_correct += sum(result)
         sequence_all += len(result)
         print(j, sum(result) / len(result))
+        if j == 0:
+            draw_plot_test(
+                torch.LongTensor(output).view(-1),
+                torch.LongTensor(label).view(-1),
+                dec_enc_attns,
+                seq,
+                seq_len,
+                max_len,
+                datainfo.codebook,
+                opt.batch_inference,
+            )
 
     print("accuracy", sequence_correct / sequence_all)
 
