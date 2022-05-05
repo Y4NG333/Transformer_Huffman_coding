@@ -96,38 +96,7 @@ def replace(inputs):
 
 
 # Plotting tool
-def draw_plot(outputs, labels, dec_enc_attns, seq, seq_len, max_len, codebook, name):
-    real_out = [torch.argmax(x).item() for x in outputs]
-    real_out = replace(real_out)
-    label = replace([labels[x].item() for x in range(0, max_len)])
-    real_out = real_out[0:max_len]
-    attn = dec_enc_attns[5][0][7].cpu().detach().numpy()
-    attn = list(map(list, zip(*attn)))
-
-    plt.figure(figsize=(15, 15))
-    plt.xticks([i for i in range(max_len)], [real_out[i] for i in range(len(real_out))])
-    plt.yticks([i for i in range(seq_len)], [seq[0][i] for i in range(len(seq[0]))])
-    plt.title("output_attention_map")
-    plt.imshow(attn)
-    plt.savefig("./output" + name + ".png")
-    plt.show()
-
-    attn_standard = np.zeros((len(seq[0]), len(label)))
-    order = 0
-    for i in range(len(seq[0])):
-        for j in range(len(codebook[seq[0][i]])):
-            attn_standard[i][order] = 1
-            order += 1
-    plt.figure(figsize=(15, 15))
-    plt.xticks([i for i in range(max_len)], [label[i] for i in range(len(label))])
-    plt.yticks([i for i in range(seq_len)], [seq[0][i] for i in range(len(seq[0]))])
-    plt.title("standard_attention_map")
-    plt.imshow(attn_standard)
-    plt.savefig("./standard" + name + ".png")
-    plt.show()
-
-
-def draw_plot_test(outputs, labels, dec_enc_attns, seq, seq_len, max_len, codebook, batch):
+def draw_plot(outputs, labels, dec_enc_attns, seq, seq_len, max_len, codebook, batch, name_image=""):
     real_outs = replace([outputs[x].item() for x in range(0, len(outputs))])
     labels = replace([labels[x].item() for x in range(0, len(labels))])
     if not os.path.exists("./images/"):
@@ -135,7 +104,7 @@ def draw_plot_test(outputs, labels, dec_enc_attns, seq, seq_len, max_len, codebo
     for k in range(batch):
         real_out = real_outs[k * max_len : (k + 1) * max_len]
         label = labels[k * max_len : (k + 1) * max_len]
-        name = str(k).zfill(4)
+        name = name_image + str(k).zfill(4)
         attn = dec_enc_attns[5][k][7].cpu().detach().numpy()
         attn = list(map(list, zip(*attn)))
 
