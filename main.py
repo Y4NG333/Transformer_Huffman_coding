@@ -11,11 +11,12 @@ from torch.optim import lr_scheduler
 from utils import data_generator, DataInfo, draw_plot, dataset_gen
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--num_epoch", type=int, default=1801, help="number of epochs of training")
+parser.add_argument("--num_epoch", type=int, default=1701, help="number of epochs of training")
 parser.add_argument("--batch_num", type=int, default=50, help="size of the batches")
+parser.add_argument("--image_nums", type=int, default=1, help="number of generated images")
 parser.add_argument("--lr", type=float, default=0.0001, help="sgd: learning rate")
 parser.add_argument("--momentum", type=float, default=0.99, help="sgd: momentum")
-parser.add_argument("--epoch_plot", type=int, default=1800, help="the epoch of plotting")
+parser.add_argument("--epoch_plot", type=int, default=1700, help="the epoch of plotting")
 parser.add_argument("--lr_scheduler_b", type=int, default=1400, help="the epoch of lr_scheduler")
 parser.add_argument("--lr_gamma", type=float, default=0.1, help="the gamma of lr_scheduler")
 parser.add_argument("--n_heads", type=int, default=8, help="the nums of attention")
@@ -55,7 +56,18 @@ for epoch in range(opt.num_epoch):
 
     # plot
     if epoch == opt.epoch_plot:
-        draw_plot(outputs, code_int_c.cpu().view(-1), dec_enc_attns, seq, seq_len, max_len)
+        outputs = [torch.argmax(x).item() for x in outputs]
+        draw_plot(
+            torch.LongTensor(outputs).view(-1),
+            code_int_c.cpu().view(-1),
+            dec_enc_attns,
+            seq,
+            seq_len,
+            max_len,
+            datainfo.codebook,
+            opt.image_nums,
+            "attention",
+        )
     print("Epoch:", "%04d" % (epoch + 1), "loss =", f"{loss}")
 
 # save the model
