@@ -6,12 +6,13 @@ import torch
 import torch.nn as nn
 
 from model import Transformer
-from utils import data_generator, DataInfo, draw_plot, dataset_gen, draw_plot_test
+from utils import data_generator, DataInfo, draw_plot, dataset_gen
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--path_model", type=str, default="./model/300net.pth", help="the path of model")
 parser.add_argument("--test_nums", type=int, default=1, help="size of the test")
+parser.add_argument("--image_nums", type=int, default=1, help="number of generated images")
 parser.add_argument("--n_heads", type=int, default=8, help="the nums of attention")
 parser.add_argument("--d_model", type=int, default=256, help="the dimmension of vocab")
 parser.add_argument("--n_layers", type=int, default=6, help="the nums of layer")
@@ -43,14 +44,16 @@ real_out = [torch.argmax(x).item() for x in outputs]
 
 loss = criterion(outputs, torch.LongTensor(code_int_c).to(device).view(-1))  # code_int.view(-1)
 print("loss =", f"{loss}")
+outputs = [torch.argmax(x).item() for x in outputs]
 draw_plot(
-    outputs,
+    torch.LongTensor(outputs).view(-1),
     torch.LongTensor(code_int_c).view(-1),
     dec_enc_attns,
     seq,
     seq_len,
     max_len,
     datainfo.codebook,
+    opt.image_nums,
     "attention2",
 )
 
@@ -90,7 +93,7 @@ def inference(sequence):
         sequence_all += len(result)
         print(j, sum(result) / len(result))
         if j == 0:
-            draw_plot_test(
+            draw_plot(
                 torch.LongTensor(output).view(-1),
                 torch.LongTensor(label).view(-1),
                 dec_enc_attns,
