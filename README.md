@@ -9,11 +9,17 @@ matplotlib (v3.3.4)
 # Usage
 Currently, the source code contains the files for training and testing. The *train.py* is for training the model on the training set. The *test.py* is for testing the model generated after training. it will generate the accuracy on the testing set. The training set and testing set is generated randomly in the program. Some pictures also are generated during the training and testing. The model is defined in the *model.py* and some other function such as plotting and generating the dataset is defined in the *utils.py*.    
 
-*python train.py* for training the model   
- *python test.py*  for testing the model 
+*python train.py* 
+ *python test.py*
 
 # Example
-As shown in the figure:
+At first,we set the length of vocab to 5 and fix a random weight. 
+Then , we set the length of sequences to 10.
+At last, we generate the dataset contains sequences by the vocab.
+
+# Result
+This is the output attention map and the standard attention map.
+
 
 ![ZLYHIK3A$ GI15U`$1O{4FU](https://user-images.githubusercontent.com/91429283/163824184-df112278-97f9-4fc7-88bb-66115d40de96.png)
 
