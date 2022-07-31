@@ -8,8 +8,10 @@ numpy (v1.19.2)
 matplotlib (v3.3.4)   
 # Usage
 Currently, the source code contains the files for training and testing. The *train.py* is for training the model on the training set. The *test.py* is for testing the model generated after training. it will generate the accuracy on the testing set. The training set and testing set is generated randomly in the program. Some pictures also are generated during the training and testing. The model is defined in the *model.py* and some other function such as plotting and generating the dataset is defined in the *utils.py*.    
-train the model: *python train.py*   
-test the model: *python test.py*   
+
+*python train.py* for training the model   
+ *python test.py*  for testing the model 
+
 # Example
 As shown in the figure:
 
