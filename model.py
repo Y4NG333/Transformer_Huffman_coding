@@ -3,7 +3,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+#device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 class PositionalEncoding(nn.Module):
@@ -68,7 +68,6 @@ class MultiHeadAttention(nn.Module):
         self.W_K = nn.Linear(self.d_model, self.d_k * self.n_heads, bias=False)
         self.W_V = nn.Linear(self.d_model, self.d_v * self.n_heads, bias=False)
         self.fc = nn.Linear(self.n_heads * self.d_v, self.d_model, bias=False)
-
     def forward(self, input_Q, input_K, input_V, attn_mask):
         residual, batch_size = input_Q, input_Q.size(0)
         Q = self.W_Q(input_Q).view(batch_size, -1, self.n_heads, self.d_k).transpose(1, 2)
@@ -79,7 +78,7 @@ class MultiHeadAttention(nn.Module):
         context, attn = ScaledDotProductAttention()(Q, K, V, attn_mask)
         context = context.transpose(1, 2).reshape(batch_size, -1, self.n_heads * self.d_v)
         output = self.fc(context)
-        return nn.LayerNorm(self.d_model).to(device)(output + residual), attn
+        return nn.LayerNorm(self.d_model).cuda()(output + residual), attn
 
 
 class PoswiseFeedForwardNet(nn.Module):
@@ -92,11 +91,10 @@ class PoswiseFeedForwardNet(nn.Module):
             nn.ReLU(),
             nn.Linear(self.d_ff, self.d_model, bias=False),
         )
-
     def forward(self, inputs):
         residual = inputs
         output = self.fc(inputs)
-        return nn.LayerNorm(self.d_model).to(device)(output + residual)
+        return nn.LayerNorm(self.d_model).cuda()(output + residual)
 
 
 class EncoderLayer(nn.Module):
@@ -160,13 +158,13 @@ class Decoder(nn.Module):
     def forward(self, dec_inputs, enc_inputs, enc_outputs):
         dec_outputs = self.tgt_emb(dec_inputs)
 
-        dec_outputs = self.pos_emb(dec_outputs.transpose(0, 1)).transpose(0, 1).to(device)
+        dec_outputs = self.pos_emb(dec_outputs.transpose(0, 1)).transpose(0, 1).cuda()
 
-        dec_self_attn_pad_mask = get_attn_pad_mask(dec_inputs, dec_inputs).to(device)
+        dec_self_attn_pad_mask = get_attn_pad_mask(dec_inputs, dec_inputs).cuda()
 
-        dec_self_attn_subsequence_mask = get_attn_subsequence_mask(dec_inputs).to(device)
+        dec_self_attn_subsequence_mask = get_attn_subsequence_mask(dec_inputs).cuda()
 
-        dec_self_attn_mask = torch.gt((dec_self_attn_pad_mask + dec_self_attn_subsequence_mask), 0).to(device)
+        dec_self_attn_mask = torch.gt((dec_self_attn_pad_mask + dec_self_attn_subsequence_mask), 0).cuda()
 
         dec_enc_attn_mask = get_attn_pad_mask(dec_inputs, enc_inputs)
 
@@ -188,9 +186,9 @@ class Transformer(nn.Module):
         self.n_layers = n_layers
         self.src_vocab_size = src_vocab_size
         self.tgt_vocab_size = tgt_vocab_size
-        self.encoder = Encoder(self.n_heads, self.d_model, self.n_layers, self.src_vocab_size).to(device)
-        self.decoder = Decoder(self.n_heads, self.d_model, self.n_layers, self.tgt_vocab_size).to(device)
-        self.projection = nn.Linear(self.d_model, self.tgt_vocab_size, bias=False).to(device)
+        self.encoder = Encoder(self.n_heads, self.d_model, self.n_layers, self.src_vocab_size).cuda()
+        self.decoder = Decoder(self.n_heads, self.d_model, self.n_layers, self.tgt_vocab_size).cuda()
+        self.projection = nn.Linear(self.d_model, self.tgt_vocab_size, bias=False)
 
     def forward(self, enc_inputs, dec_inputs):
         enc_outputs, enc_self_attns = self.encoder(enc_inputs)
