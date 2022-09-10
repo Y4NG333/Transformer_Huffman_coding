@@ -1,3 +1,4 @@
 plot means the figure in the paper
 we print the first attention of head
 test need 40g gpu for sequence 100 or reduce the test batch from 50 to 20 or less
+wait for more...
